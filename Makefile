@@ -1,0 +1,119 @@
+# Makefile for fltk-barcode-gen
+# ----------------------------------------------------------------------
+# Written by Raph.K.
+#
+
+GCC = gcc
+GPP = g++
+AR  = ar
+WRC = windres
+FCG = fltk-config --use-images
+
+# FLTK configs 
+FLTKCFG_CXX := $(shell ${FCG} --cxxflags)
+FLTKCFG_LFG := $(shell ${FCG} --ldflags)
+
+#Freetype2 configs
+FT2_CFLAGS := $(shell pkg-config freetype2 --cflags)
+FT2_LFLAGS := $(shell pkg-config freetype2 --libs)
+
+# Base PATH
+BASE_PATH = .
+SRC_PATH  = $(BASE_PATH)/src
+
+# TARGET settings
+TARGET_PKG =  fltkbarcodegen
+TARGET_DIR = ./bin
+TARGET_OBJ = ./obj
+
+# DEFINITIONS
+DEFS += -DWIN32 -D_WIN32 -DUNICODE -D_UNICODE -DSUPPORT_WCHAR
+DEFS += -DDEBUG
+
+# Compiler optiops 
+COPTS += -std=c++11
+COPTS += -mms-bitfields -mwindows
+COPTS += -fopenmp -fomit-frame-pointer -fexpensive-optimizations -O3 -s
+#COPTS += -fopenmp -fomit-frame-pointer -DDEBUG
+
+# Where is fl_imgtk?
+FLIMGTK_DIR = ../fl_imgtk/lib
+
+# Where is FLFTRender ?
+FLFTRNDR_DIR = ../FLFTRender/src
+FLFTRNDR_SRC = $(FLFTRNDR_DIR)/FLFTRender.cpp
+FLFTRNDR_OBJ = $(TARGET_OBJ)/FLFTRender/FLFTRender.o
+
+# CC FLAGS
+CFLAGS  = -I$(SRC_PATH)
+CFLAGS += -Ires
+CFLAGS += -I$(FLIMGTK_DIR)
+CFLAGS += -I$(FLFTRNDR_DIR)
+CFLAGS += $(FT2_CFLAGS)
+CFLAGS += $(FLTKCFG_CXX)
+CFLAGS += $(DEFS)
+CFLAGS += $(COPTS)
+
+# Windows Resource Flags
+WFLGAS  = $(CFLAGS)
+
+# LINK FLAG
+LFLAGS += -L$(FLIMGTK_DIR)
+LFLAGS += -static
+LFLAGS += $(FT2_LFLAGS)
+LFLAGS += -lfl_imgtk_omp
+LFLAGS += -lbz2
+LFLAGS += -lharfbuzz
+LFLAGS += -lgraphite2
+LFLAGS += -lpng
+LFLAGS += -lz
+LFLAGS += -lbrotlidec
+LFLAGS += -lbrotlicommon
+LFLAGS += $(FLTKCFG_LFG)
+LFLAGS += -lpthread
+LFLAGS += -lrpcrt4
+
+# Sources
+SRCS = $(wildcard $(SRC_PATH)/*.cpp)
+
+# Windows resource
+WRES = res/resource.rc
+
+# Make object targets from SRCS.
+OBJS = $(SRCS:$(SRC_PATH)/%.cpp=$(TARGET_OBJ)/%.o)
+WROBJ = $(TARGET_OBJ)/resource.o
+
+.PHONY: prepare clean
+
+all: prepare continue
+
+continue: $(TARGET_DIR)/$(TARGET_PKG)
+
+prepare:
+	@mkdir -p $(TARGET_DIR)
+	@mkdir -p $(TARGET_OBJ)
+	@mkdir -p $(TARGET_OBJ)/FLFTRender
+
+clean:
+	@echo "Cleaning built targets ..."
+	@rm -rf $(TARGET_DIR)/$(TARGET_PKG).*
+	@rm -rf $(TARGET_INC)/*.h
+	@rm -rf $(TARGET_OBJ)/*.o
+	@rm -rf $(FLFTRNDR_OBJ)
+
+$(OBJS): $(TARGET_OBJ)/%.o: $(SRC_PATH)/%.cpp
+	@echo "Building $@ ... "
+	@$(GPP) $(CFLAGS) -c $< -o $@
+
+$(FLFTRNDR_OBJ): $(FLFTRNDR_SRC)
+	@echo "Building $@ ... "
+	@$(GPP) $(CFLAGS) -c $< -o $@
+
+$(WROBJ): $(WRES)
+	@echo "Building windows resource ..."
+	@$(WRC) -i $(WRES) $(WFLAGS) -o $@
+
+$(TARGET_DIR)/$(TARGET_PKG): $(OBJS) $(FLFTRNDR_OBJ) $(WROBJ)
+	@echo "Generating $@ ..."
+	@$(GPP) $^ $(CFLAGS) $(LFLAGS) -o $@
+	@echo "done."

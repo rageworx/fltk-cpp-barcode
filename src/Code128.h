@@ -18,7 +18,7 @@ class Code128
         void init();
         uint8_t* initBuffer(size_t dataLen, size_t* retlen);
         std::string insertSpace(std::string& data);
-        size_t appendData(const uint8_t weights, uint8_t* dst, int pos, std::string debugdata);
+        size_t appendData(const void* weights, uint8_t* dst, int pos, std::string debugdata);
         bool checkNumber(std::string data);
         uint8_t* encode( size_t* retlen = nullptr );
 

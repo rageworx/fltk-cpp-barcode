@@ -1,4 +1,4 @@
-#include <unitstd.h>
+#include <unistd.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
@@ -9,12 +9,16 @@
 #include <fl_imgtk.h>
 
 #include "EAN13.h"
+#include "mmath.h"
 
 #define L_CODE  (0)
 #define G_CODE  (1)
 #define R_CODE  (2)
 
-const uint8_t FIRST_DIGIT[][] = 
+typedef uint8_t digitItem[12];
+typedef uint8_t patternItem[7];
+
+const digitItem FIRST_DIGIT[] = 
 {
     { L_CODE,L_CODE,L_CODE,L_CODE,L_CODE,L_CODE,R_CODE,R_CODE,R_CODE,R_CODE,R_CODE,R_CODE },
     { L_CODE,L_CODE,G_CODE,L_CODE,G_CODE,G_CODE,R_CODE,R_CODE,R_CODE,R_CODE,R_CODE,R_CODE },
@@ -33,7 +37,7 @@ const uint8_t MIDDLE_PATTERN[] = { 0, 1, 0, 1, 0 };
 const uint8_t END_PATTERN[] =  { 1, 0, 1 };
 
 // l-code
-const uint8_t L_CODE_PATTERN[][] = 
+const patternItem L_CODE_PATTERN[] = 
 {
     { 0,0,0,1,1,0,1 },
     { 0,0,1,1,0,0,1 },
@@ -48,7 +52,7 @@ const uint8_t L_CODE_PATTERN[][] =
 };
 
 // g-code
-const uint8_t G_CODE_PATTERN[][] = 
+const patternItem G_CODE_PATTERN[] = 
 {
     { 0,1,0,0,1,1,1 },
     { 0,1,1,0,0,1,1 },
@@ -63,7 +67,7 @@ const uint8_t G_CODE_PATTERN[][] =
 };
 
 // r-code
-const uint8_t R_CODE_PATTERN = 
+const patternItem R_CODE_PATTERN[] = 
 {
     { 1,1,1,0,0,1,0 },
     { 1,1,0,0,1,1,0 },
@@ -80,16 +84,16 @@ const uint8_t R_CODE_PATTERN =
 
 EAN13::EAN13( std::string& dt )
 {
-    this.data = dt;
+    data = dt;
 }
 
-~EAN13::EAN13()
+EAN13::~EAN13()
 {
 }
         
 void EAN13::setData( std::string& dt ) 
 {
-    this.data = dt;
+    data = dt;
 }
 
 std::string EAN13::getData()
@@ -97,7 +101,7 @@ std::string EAN13::getData()
     return data;
 }
 
-uint8_t* EAN13::encode() 
+uint8_t* EAN13::encode( size_t* retlen )
 {
     if( isVaildBarcodeData() == false ) 
     {
@@ -113,27 +117,27 @@ uint8_t* EAN13::encode()
     if ( buffer == nullptr )
         return nullptr;
     
-    size_t  first_num = data[0] - 0x30;
-    uint8_t patterns  = FIRST_DIGIT[first_num];
+    size_t   first_num = data[0] - 0x30;
+    uint8_t* patterns  = (uint8_t*)&FIRST_DIGIT[first_num];
     
-    pos += appendData( START_PATTERN, 3, buffer, pos, "START CODE");
-    for(size_t ct=1; cnt<len; cnt++) 
+    pos += appendData( START_PATTERN, 3, buffer, pos, "START CODE" );
+    for(size_t cnt=1; cnt<len; cnt++) 
     {
-        size_t num = data[cnt] - 0x30;        
-        byte code  = patterns[ cnt-1 ];
+        size_t  num  = data[cnt] - 0x30; /// 0x30 == '0'.
+        uint8_t code = patterns[ cnt-1 ];
         
-        if(code == L_CODE) 
+        switch( code )
         {
-            pos += appendData( &L_CODE_PATTERN[num], 7, buffer, pos, "L code based number" );
-        } 
-        else 
-        if(code ==EAN13Constant.G_CODE) 
-        {
-            pos += appendData( &G_CODE_PATTERN[num], 7, buffer, pos, "G code based number" );
-        } 
-        else 
-        { 
-            pos += appendData( &R_CODE_PATTERN[num], 7, buffer, pos, "R code based number" );
+            case L_CODE:
+                pos += appendData( &L_CODE_PATTERN[num], 7, buffer, pos, "L code based number" );
+                break;
+                
+            case G_CODE:
+                pos += appendData( &G_CODE_PATTERN[num], 7, buffer, pos, "G code based number" );
+                break;
+                
+            default:
+                pos += appendData( &R_CODE_PATTERN[num], 7, buffer, pos, "R code based number" );
         }
         
         if( cnt == 6 ) 
@@ -143,6 +147,11 @@ uint8_t* EAN13::encode()
     }
     
     pos += appendData( END_PATTERN, 3, buffer, pos, "END CODE");
+    
+    if ( retlen != nullptr )
+    {
+        *retlen = pos + 3;
+    }
 
     return buffer;
 }
@@ -157,30 +166,38 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
         size_t inputWidth = codelen;
         // Add quiet zone on both sides
         size_t fullWidth = inputWidth + 6; // for empty(quiet) space
-        size_t outputWidth = Math.max(width, fullWidth);
-        size_t outputHeight = Math.max(1, height);
+        size_t outputWidth = __MAX(width, fullWidth);
+        size_t outputHeight = __MAX(1, height);
 
         size_t multiple = outputWidth / fullWidth;
         size_t leftPadding = (outputWidth - (inputWidth * multiple)) / 2;
 
         // Create an image has transparency background .
-        Fl_RGB_Image* bitmap = fl_imgtk::makeanempty( width, height, 4, 0xFFFFFF00 );
+        Fl_RGB_Image* image = fl_imgtk::makeanempty( width, height, 4, 0xFFFFFF00 );
 
-        if ( bitmap != nullptr )
+        if ( image != nullptr )
         {                    
-            for ( size_t inputX = 0, outputX = leftPadding; inputX < inputWidth; inputX++, outputX += multiple) 
+            for ( size_t inputX=0, outputX=leftPadding; \
+                  inputX<inputWidth; \
+                  inputX++, outputX+=multiple ) 
             {
                 if (code[inputX] == 1) 
                 {                
                     fl_imgtk::\
                     draw_fillrect( image,
-                                   outputX, 0, (outputX+multiple), outputHeight,
+                                   outputX, 0, multiple, outputHeight,
                                    0x000000FF );
+#ifdef DEBUG
+                    fprintf( stdout,
+                             "draw_fillrect( %p, %u, %u, %u, %u, .. );\n",
+                             image, outputX, 0, multiple, outputHeight );
+                    fflush( stdout );
+#endif /// of DEBUG
                 }
             }
         }
 
-        return bitmap;
+        return image;
     }
     
     return nullptr;
@@ -221,19 +238,29 @@ uint8_t* EAN13::initBuffer( size_t* retlen )
 }
 
 
-size_t EAN13::appendData( const uint8_t* src, size_t srclen, uint8_t* dst, size_t pos, std::string& debugdata ) 
+size_t EAN13::appendData( const void* src, size_t srclen, uint8_t* dst, size_t pos, const char* debugdata ) 
 {
-    memcpy( dst, &src[pos],  seclen - pos );
-
-    if( debugdata.size() > 0 )
+    if ( ( src != nullptr ) && ( dst != nullptr ) )
     {
-        printByteArr( debugdata, src, srclen );
-    }
+        uint8_t* ps = (uint8_t*)src;
+        
+        if ( srclen < 12 )
+        {
+            memcpy( &dst[pos], ps, srclen );
+            
+            if( debugdata != nullptr )
+            {
+                printByteArr( debugdata, ps, srclen );
+            }
 
-    return srclen - pos;
+            return srclen;
+        }
+    }
+    
+    return 0;
 }
 
-void EAN13::printByteArr( std::string& msg, const uint8_t* buff, size_t bufflen )
+void EAN13::printByteArr( const char* msg, const uint8_t* buff, size_t bufflen )
 {
     if( buff != nullptr )
     {
@@ -246,12 +273,23 @@ void EAN13::printByteArr( std::string& msg, const uint8_t* buff, size_t bufflen 
             snprintf( strndr, 4, "%d ", buff[cnt] );
             sb += strndr;
         }
-            
-        fprintf( stdout, "char: %s,  barcode weight: ", msg.c_str(), sb.c_str() );
+
+#ifdef DEBUG
+        if ( msg != nullptr )
+        {
+            fprintf( stdout, "char: %s, barcode weight: %s\n", msg, sb.c_str() );
+        }
+        else
+        {
+            fprintf( stdout, "barcode weight: %s\n", sb.c_str() );
+        }
+
+        fflush( stdout );
+#endif /// of DEBUG
     }    
 }
 
-bool EAN13::checkNumber(std::string data) 
+bool EAN13::checkNumber(std::string& data) 
 {
     const char* pref = data.c_str();
 

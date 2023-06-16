@@ -1,4 +1,4 @@
-#include <unitstd.h>
+#include <unistd.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
@@ -9,6 +9,7 @@
 #include <fl_imgtk.h>
 
 #include "Code128.h"
+#include "mmath.h"
 
 #define CODE_START_B 	( 104 )
 #define CODE_STOP 		( 106 )
@@ -16,115 +17,117 @@
 #define TOP_GAP         ( 30 )
 #define BOTTOM_GAP      ( 60 )
 
-const uint8_t CODE_WEIGHT[][] = 
+typedef uint8_t cwItem[8];
+
+const cwItem CODE_WEIGHT[] = 
 {
-    {2, 1, 2, 2, 2, 2}, // 0
-    {2, 2, 2, 1, 2, 2},
-    {2, 2, 2, 2, 2, 1},
-    {1, 2, 1, 2, 2, 3},
-    {1, 2, 1, 3, 2, 2},
-    {1, 3, 1, 2, 2, 2}, // 5
-    {1, 2, 2, 2, 1, 3},
-    {1, 2, 2, 3, 1, 2},
-    {1, 3, 2, 2, 1, 2},
-    {2, 2, 1, 2, 1, 3},
-    {2, 2, 1, 3, 1, 2}, // 10
-    {2, 3, 1, 2, 1, 2},
-    {1, 1, 2, 2, 3, 2},
-    {1, 2, 2, 1, 3, 2},
-    {1, 2, 2, 2, 3, 1},
-    {1, 1, 3, 2, 2, 2}, // 15
-    {1, 2, 3, 1, 2, 2},
-    {1, 2, 3, 2, 2, 1},
-    {2, 2, 3, 2, 1, 1},
-    {2, 2, 1, 1, 3, 2},
-    {2, 2, 1, 2, 3, 1}, // 20
-    {2, 1, 3, 2, 1, 2},
-    {2, 2, 3, 1, 1, 2},
-    {3, 1, 2, 1, 3, 1},
-    {3, 1, 1, 2, 2, 2},
-    {3, 2, 1, 1, 2, 2}, // 25
-    {3, 2, 1, 2, 2, 1},
-    {3, 1, 2, 2, 1, 2},
-    {3, 2, 2, 1, 1, 2},
-    {3, 2, 2, 2, 1, 1},
-    {2, 1, 2, 1, 2, 3}, // 30
-    {2, 1, 2, 3, 2, 1},
-    {2, 3, 2, 1, 2, 1},
-    {1, 1, 1, 3, 2, 3},
-    {1, 3, 1, 1, 2, 3},
-    {1, 3, 1, 3, 2, 1}, // 35
-    {1, 1, 2, 3, 1, 3},
-    {1, 3, 2, 1, 1, 3},
-    {1, 3, 2, 3, 1, 1},
-    {2, 1, 1, 3, 1, 3},
-    {2, 3, 1, 1, 1, 3}, // 40
-    {2, 3, 1, 3, 1, 1},
-    {1, 1, 2, 1, 3, 3},
-    {1, 1, 2, 3, 3, 1},
-    {1, 3, 2, 1, 3, 1},
-    {1, 1, 3, 1, 2, 3}, // 45
-    {1, 1, 3, 3, 2, 1},
-    {1, 3, 3, 1, 2, 1},
-    {3, 1, 3, 1, 2, 1},
-    {2, 1, 1, 3, 3, 1},
-    {2, 3, 1, 1, 3, 1}, // 50
-    {2, 1, 3, 1, 1, 3},
-    {2, 1, 3, 3, 1, 1},
-    {2, 1, 3, 1, 3, 1},
-    {3, 1, 1, 1, 2, 3},
-    {3, 1, 1, 3, 2, 1}, // 55
-    {3, 3, 1, 1, 2, 1},
-    {3, 1, 2, 1, 1, 3},
-    {3, 1, 2, 3, 1, 1},
-    {3, 3, 2, 1, 1, 1},
-    {3, 1, 4, 1, 1, 1}, // 60
-    {2, 2, 1, 4, 1, 1},
-    {4, 3, 1, 1, 1, 1},
-    {1, 1, 1, 2, 2, 4},
-    {1, 1, 1, 4, 2, 2},
-    {1, 2, 1, 1, 2, 4}, // 65
-    {1, 2, 1, 4, 2, 1},
-    {1, 4, 1, 1, 2, 2},
-    {1, 4, 1, 2, 2, 1},
-    {1, 1, 2, 2, 1, 4},
-    {1, 1, 2, 4, 1, 2}, // 70
-    {1, 2, 2, 1, 1, 4},
-    {1, 2, 2, 4, 1, 1},
-    {1, 4, 2, 1, 1, 2},
-    {1, 4, 2, 2, 1, 1},
-    {2, 4, 1, 2, 1, 1}, // 75
-    {2, 2, 1, 1, 1, 4},
-    {4, 1, 3, 1, 1, 1},
-    {2, 4, 1, 1, 1, 2},
-    {1, 3, 4, 1, 1, 1},
-    {1, 1, 1, 2, 4, 2}, // 80
-    {1, 2, 1, 1, 4, 2},
-    {1, 2, 1, 2, 4, 1},
-    {1, 1, 4, 2, 1, 2},
-    {1, 2, 4, 1, 1, 2},
-    {1, 2, 4, 2, 1, 1}, // 85
-    {4, 1, 1, 2, 1, 2},
-    {4, 2, 1, 1, 1, 2},
-    {4, 2, 1, 2, 1, 1},
-    {2, 1, 2, 1, 4, 1},
-    {2, 1, 4, 1, 2, 1}, // 90
-    {4, 1, 2, 1, 2, 1},
-    {1, 1, 1, 1, 4, 3},
-    {1, 1, 1, 3, 4, 1},
-    {1, 3, 1, 1, 4, 1},
-    {1, 1, 4, 1, 1, 3}, // 95
-    {1, 1, 4, 3, 1, 1},
-    {4, 1, 1, 1, 1, 3},
-    {4, 1, 1, 3, 1, 1},
-    {1, 1, 3, 1, 4, 1},
-    {1, 1, 4, 1, 3, 1}, // 100
-    {3, 1, 1, 1, 4, 1},
-    {4, 1, 1, 1, 3, 1},
-    {2, 1, 1, 4, 1, 2},
-    {2, 1, 1, 2, 1, 4},
-    {2, 1, 1, 2, 3, 2}, // 105
-    {2, 3, 3, 1, 1, 1, 2}
+    {2, 1, 2, 2, 2, 2, 0}, // 0
+    {2, 2, 2, 1, 2, 2, 0},
+    {2, 2, 2, 2, 2, 1, 0},
+    {1, 2, 1, 2, 2, 3, 0},
+    {1, 2, 1, 3, 2, 2, 0},
+    {1, 3, 1, 2, 2, 2, 0}, // 5
+    {1, 2, 2, 2, 1, 3, 0},
+    {1, 2, 2, 3, 1, 2, 0},
+    {1, 3, 2, 2, 1, 2, 0},
+    {2, 2, 1, 2, 1, 3, 0},
+    {2, 2, 1, 3, 1, 2, 0}, // 10
+    {2, 3, 1, 2, 1, 2, 0},
+    {1, 1, 2, 2, 3, 2, 0},
+    {1, 2, 2, 1, 3, 2, 0},
+    {1, 2, 2, 2, 3, 1, 0},
+    {1, 1, 3, 2, 2, 2, 0}, // 15
+    {1, 2, 3, 1, 2, 2, 0},
+    {1, 2, 3, 2, 2, 1, 0},
+    {2, 2, 3, 2, 1, 1, 0},
+    {2, 2, 1, 1, 3, 2, 0},
+    {2, 2, 1, 2, 3, 1, 0}, // 20
+    {2, 1, 3, 2, 1, 2, 0},
+    {2, 2, 3, 1, 1, 2, 0},
+    {3, 1, 2, 1, 3, 1, 0},
+    {3, 1, 1, 2, 2, 2, 0},
+    {3, 2, 1, 1, 2, 2, 0}, // 25
+    {3, 2, 1, 2, 2, 1, 0},
+    {3, 1, 2, 2, 1, 2, 0},
+    {3, 2, 2, 1, 1, 2, 0},
+    {3, 2, 2, 2, 1, 1, 0},
+    {2, 1, 2, 1, 2, 3, 0}, // 30
+    {2, 1, 2, 3, 2, 1, 0},
+    {2, 3, 2, 1, 2, 1, 0},
+    {1, 1, 1, 3, 2, 3, 0},
+    {1, 3, 1, 1, 2, 3, 0},
+    {1, 3, 1, 3, 2, 1, 0}, // 35
+    {1, 1, 2, 3, 1, 3, 0},
+    {1, 3, 2, 1, 1, 3, 0},
+    {1, 3, 2, 3, 1, 1, 0},
+    {2, 1, 1, 3, 1, 3, 0},
+    {2, 3, 1, 1, 1, 3, 0}, // 40
+    {2, 3, 1, 3, 1, 1, 0},
+    {1, 1, 2, 1, 3, 3, 0},
+    {1, 1, 2, 3, 3, 1, 0},
+    {1, 3, 2, 1, 3, 1, 0},
+    {1, 1, 3, 1, 2, 3, 0}, // 45
+    {1, 1, 3, 3, 2, 1, 0},
+    {1, 3, 3, 1, 2, 1, 0},
+    {3, 1, 3, 1, 2, 1, 0},
+    {2, 1, 1, 3, 3, 1, 0},
+    {2, 3, 1, 1, 3, 1, 0}, // 50
+    {2, 1, 3, 1, 1, 3, 0},
+    {2, 1, 3, 3, 1, 1, 0},
+    {2, 1, 3, 1, 3, 1, 0},
+    {3, 1, 1, 1, 2, 3, 0},
+    {3, 1, 1, 3, 2, 1, 0}, // 55
+    {3, 3, 1, 1, 2, 1, 0},
+    {3, 1, 2, 1, 1, 3, 0},
+    {3, 1, 2, 3, 1, 1, 0},
+    {3, 3, 2, 1, 1, 1, 0},
+    {3, 1, 4, 1, 1, 1, 0}, // 60
+    {2, 2, 1, 4, 1, 1, 0},
+    {4, 3, 1, 1, 1, 1, 0},
+    {1, 1, 1, 2, 2, 4, 0},
+    {1, 1, 1, 4, 2, 2, 0},
+    {1, 2, 1, 1, 2, 4, 0}, // 65
+    {1, 2, 1, 4, 2, 1, 0},
+    {1, 4, 1, 1, 2, 2, 0},
+    {1, 4, 1, 2, 2, 1, 0},
+    {1, 1, 2, 2, 1, 4, 0},
+    {1, 1, 2, 4, 1, 2, 0}, // 70
+    {1, 2, 2, 1, 1, 4, 0},
+    {1, 2, 2, 4, 1, 1, 0},
+    {1, 4, 2, 1, 1, 2, 0},
+    {1, 4, 2, 2, 1, 1, 0},
+    {2, 4, 1, 2, 1, 1, 0}, // 75
+    {2, 2, 1, 1, 1, 4, 0},
+    {4, 1, 3, 1, 1, 1, 0},
+    {2, 4, 1, 1, 1, 2, 0},
+    {1, 3, 4, 1, 1, 1, 0},
+    {1, 1, 1, 2, 4, 2, 0}, // 80
+    {1, 2, 1, 1, 4, 2, 0},
+    {1, 2, 1, 2, 4, 1, 0},
+    {1, 1, 4, 2, 1, 2, 0},
+    {1, 2, 4, 1, 1, 2, 0},
+    {1, 2, 4, 2, 1, 1, 0}, // 85
+    {4, 1, 1, 2, 1, 2, 0},
+    {4, 2, 1, 1, 1, 2, 0},
+    {4, 2, 1, 2, 1, 1, 0},
+    {2, 1, 2, 1, 4, 1, 0},
+    {2, 1, 4, 1, 2, 1, 0}, // 90
+    {4, 1, 2, 1, 2, 1, 0},
+    {1, 1, 1, 1, 4, 3, 0},
+    {1, 1, 1, 3, 4, 1, 0},
+    {1, 3, 1, 1, 4, 1, 0},
+    {1, 1, 4, 1, 1, 3, 0}, // 95
+    {1, 1, 4, 3, 1, 1, 0},
+    {4, 1, 1, 1, 1, 3, 0},
+    {4, 1, 1, 3, 1, 1, 0},
+    {1, 1, 3, 1, 4, 1, 0},
+    {1, 1, 4, 1, 3, 1, 0}, // 100
+    {3, 1, 1, 1, 4, 1, 0},
+    {4, 1, 1, 1, 3, 1, 0},
+    {2, 1, 1, 4, 1, 2, 0},
+    {2, 1, 1, 2, 1, 4, 0},
+    {2, 1, 1, 2, 3, 2, 0}, // 105
+    {2, 3, 3, 1, 1, 1, 2, 0}
 };
 
 //numbers only
@@ -136,22 +139,21 @@ Code128::Code128( std::string& dt )
     data = dt;
 }
 
-~Code128::Code128()
+Code128::~Code128()
 {
 }
 
 void Code128::setData( std::string& dt )
 {
-    this.data = dt;
+    data = dt;
 }
 
 std::string Code128::getData() 
 {
     return data;
 }
-        
 
-uint8_t* Code128encode( size_t* retlen )
+uint8_t* Code128::encode( size_t* retlen )
 {
     if( data.size() > 0 )
     {
@@ -167,7 +169,7 @@ uint8_t* Code128encode( size_t* retlen )
         
         if ( buffer != nullptr )
         {
-            count = appendData( CODE_WEIGHT[CODE_START_B], buffer, pos, "StartCode" );
+            count = appendData( &CODE_WEIGHT[CODE_START_B], buffer, pos, "StartCode" );
             pos += count;
             weight_sum = CODE_START_B;
 
@@ -177,7 +179,7 @@ uint8_t* Code128encode( size_t* retlen )
                 char ch = data.at(cnt);
 
                 index = ch - 0x20; /// decrease by space.
-                uint8_t ch_weight = CODE_WEIGHT[index];
+                uint8_t* ch_weight = (uint8_t*)&CODE_WEIGHT[index];
                 char tmpch[2] = { ch, 0x00 };
                 count = appendData( ch_weight, buffer, pos, tmpch );
                 pos += count;
@@ -194,14 +196,14 @@ uint8_t* Code128encode( size_t* retlen )
             pos += count;
 
             //printCode128MetaInfo();
-            if ( retlen != nulltpr )
+            if ( retlen != nullptr )
                 *retlen = blen;
             
             return buffer;
         }
     }
     
-    return NULL;
+    return nullptr;
 }
 
 Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height) 
@@ -209,12 +211,12 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
     size_t inputWidth = 0;
     uint8_t* code = encode( &inputWidth );
     
-    if ( code != nulltpr )
+    if ( code != nullptr )
     {
         // Add quiet zone on both sides
         size_t fullWidth    = inputWidth + (6);
-        size_t outputWidth  = Math.max(width, fullWidth);
-        size_t outputHeight = Math.max(1, height) - BOTTOM_GAP;
+        size_t outputWidth  = __MAX(width, fullWidth);
+        size_t outputHeight = __MAX(1, height) - BOTTOM_GAP;
 
         size_t multiple     = outputWidth / fullWidth;
         size_t leftPadding  = (outputWidth - (inputWidth * multiple)) / 2;
@@ -223,41 +225,69 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
         Fl_RGB_Image* bitmap = fl_imgtk::makeanempty( width, height, 4, 0xFFFFFF00 );
 
         if ( bitmap != nullptr )
-        {                    
-            for ( width inputX=0, outputX=leftPadding; inputX<inputWidth; inputX++, outputX += multiple )
+        {   
+            size_t cfsize = 0;
+            
+            FLFTRender* ftr = new FLFTRender( "DejaVuSansMono.ttf", 0 );
+            
+            if ( ftr == nullptr )
+            {
+                fprintf( stderr, "Cannot loaded font!\n" );
+            }
+            else
+            {
+                cfsize = height * 0.1f; /// 10% of height is font size.
+            }
+            
+            for ( size_t inputX=0, outputX=leftPadding; \
+                  inputX<inputWidth; \
+                  inputX++, outputX += multiple )
             {
                 if ( code[inputX] == 1 ) 
                 {
                     fl_imgtk::\
                     draw_fillrect( bitmap, 
-                                   outputX, TOP_GAP, (outputX+multiple), outputHeight,
+                                   outputX, TOP_GAP, 
+                                   multiple, outputHeight - cfsize + 5,
                                    0x000000FF );
                 }
             }
-        }
-
-        FLFTRender* ftr = new FLFTRender( "consolas.ttf", 0 );
-        
-        if ( ftr != nulltpr )
-        {
-            if ( ftr->FontLoaded() == true )
-            {
-                size_t size = height * 0.1f; /// 10% of height is font size.
-                
-                ftr->FontColor( 0x000000FF ); /// black, non-alpha.
-
-                std::string str = insertSpace( data );
-                
-                FLFTRender::Rect mbox = {0, 0, 0, 0};
-                ftr->MeasureText( str.c_str(), mbox );
-                
-                unsigned w_x = ( width - mbox->w ) / 2;
-                unsigned w_y = ( height - mbox->h ) / 2;
-                
-                ftr->RenderText( bitmap, w_x, w_h, str.c_str() );
-            }
             
-            delete ftr;
+            if ( ftr != nullptr )
+            {
+                if ( ftr->FontLoaded() == true )
+                {                    
+                    ftr->FontColor( 0x010101FF ); /// black, non-alpha.
+                    ftr->FontSize( cfsize );
+
+                    std::string str = insertSpace( data );
+                    
+                    FLFTRender::Rect mbox = {0, 0, 0, 0};
+                    ftr->MeasureText( str.c_str(), mbox );
+                    
+                    unsigned w_x = ( width - mbox.w ) / 2;
+                    unsigned w_y = height - mbox.h - 5;
+                    
+                    fl_imgtk::\
+                    draw_fillrect( bitmap,
+                                   w_x, w_y,
+                                   mbox.w, mbox.h,
+                                   0xFFFFFFFF );
+                    
+                    ftr->RenderText( bitmap, w_x, w_y, str.c_str() );
+#ifdef DEBUG
+                    fprintf( stdout, "Font rendered [%s] at %u, %u\n",
+                             str.c_str(), w_x, w_y );
+                    fflush( stdout );
+#endif /// of DEBUG
+                }
+                
+                delete ftr;
+            }
+            else
+            {
+                
+            }            
         }
         
         return bitmap;
@@ -360,14 +390,16 @@ std::string Code128::insertSpace(std::string& data)
     return sb;
 }
 
-size_t Code128::appendData(const uint8_t weights, uint8_t* dst, int pos, std::string debugdata)
+size_t Code128::appendData(const void* weights, uint8_t* dst, int pos, std::string debugdata)
 {
-    size_t  count = 0;
-    size_t  index = pos;
-    uint8_t color = 1;
+    size_t   count = 0;
+    size_t   index = pos;
+    uint8_t  color = 1;
+    uint8_t* pW = (uint8_t*)weights;
     
-    for( uint8_t weight=0; weight<weights; weight++ )
+    while( *pW != 0 )
     {
+        uint8_t weight = *pW;
         for( size_t cnt=0; cnt<weight; cnt++ ) 
         {
             dst[index] = color;
@@ -376,6 +408,7 @@ size_t Code128::appendData(const uint8_t weights, uint8_t* dst, int pos, std::st
         }
         
         color ^= 1;
+        pW++;
     }
             
     return count;
