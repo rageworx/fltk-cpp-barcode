@@ -14,9 +14,9 @@
 #include <FL/Fl_Image.H>
 #include <FL/Fl_RGB_Image.H>
 #include <FL/Fl_Button.H>
-#include <FL/Fl_Input.H>
+#include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Choice.H>
-#include <FL/Fl_ask.H>
+#include <FL/fl_ask.H>
 
 #include "resource.h"
 #include "Code128.h"
@@ -84,6 +84,12 @@ void fl_wcb( Fl_Widget* w )
 {
     if ( w == window )
     {
+        window->deactivate();
+        if ( imgBarCode != nullptr )
+        {
+            boxRender->deimage();
+            delete imgBarCode;
+        }
         window->hide();
         return;
     }
@@ -124,11 +130,27 @@ void fl_wcb( Fl_Widget* w )
                 
                 case 1: /// EAN13
                 {
+                    if ( strCode.size() != 13 )
+                    {
+                        fl_message_title( "ERROR" );
+                        fl_message( "EAN13 code requires 13 digits." );
+                        btnGenerate->activate();
+                        inpCode->activate();                        
+                        return;
+                    }
                     EAN13* ean13 = new EAN13( strCode );
                     if ( ean13 != nullptr )
                     {
                         imgBarCode = ean13->getImage( img_w, img_h );
                         delete ean13;
+                        
+                        if ( imgBarCode == nullptr )
+                        {
+                            fprintf( stdout, 
+                                     "Failed to generate EAN13 barcode with %s\n",
+                                     strCode.c_str() );
+                            fflush( stdout );
+                        }
                     }
                 }
                 break;
@@ -161,7 +183,7 @@ void createWindow()
             chsType->callback( fl_wcb );
         }
         
-        inpCode = new Fl_Input( 155, 5, 345, 25 );
+        inpCode = new Fl_Int_Input( 155, 5, 345, 25 );
         if ( inpCode != nullptr )
         {
             inpCode->textfont( FL_COURIER );
