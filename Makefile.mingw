@@ -28,7 +28,6 @@ TARGET_OBJ = ./obj
 
 # DEFINITIONS
 DEFS += -DWIN32 -D_WIN32 -DUNICODE -D_UNICODE -DSUPPORT_WCHAR
-DEFS += -DDEBUG
 
 # Compiler optiops 
 COPTS += -std=c++11
