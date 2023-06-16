@@ -1,7 +1,8 @@
 bin/
 gen/
 obj/
-.classpath
-.project
-.swp
-.ttf
+*.classpath
+*.project
+*.swp
+*.ttf
+*.tmp
