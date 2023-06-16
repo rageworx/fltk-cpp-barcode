@@ -257,7 +257,7 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
             {
                 if ( ftr->FontLoaded() == true )
                 {                    
-                    ftr->FontColor( 0x010101FF ); /// black, non-alpha.
+                    ftr->FontColor( 0x000000FF ); /// black, non-alpha.
                     ftr->FontSize( cfsize );
 
                     std::string str = insertSpace( data );

@@ -162,38 +162,116 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
     uint8_t* code = encode( &codelen );
     
     if ( code != nullptr )
-    {
-        size_t inputWidth = codelen;
+    {        
         // Add quiet zone on both sides
-        size_t fullWidth = inputWidth + 6; // for empty(quiet) space
+        size_t fullWidth = codelen + 6; // for empty(quiet) space
         size_t outputWidth = __MAX(width, fullWidth);
         size_t outputHeight = __MAX(1, height);
-
         size_t multiple = outputWidth / fullWidth;
-        size_t leftPadding = (outputWidth - (inputWidth * multiple)) / 2;
+        size_t leftPadding = (outputWidth - (codelen * multiple)) / 2;
+        size_t fntHeight = leftPadding;
 
         // Create an image has transparency background .
         Fl_RGB_Image* image = fl_imgtk::makeanempty( width, height, 4, 0xFFFFFF00 );
 
         if ( image != nullptr )
-        {                    
+        {
+            FLFTRender* ftr = new FLFTRender( "DejaVuSansMono.ttf", 0 );
+            
+            if ( ftr != nullptr )
+            {
+                if ( ftr->FontLoaded() == true )
+                {                    
+                    ftr->FontColor( 0x000000FF ); /// black, non-alpha.
+                    ftr->FontSize( fntHeight );
+                }
+                else
+                {
+                    delete ftr;
+                    ftr = nullptr;
+                }
+            }
+            
+            size_t midIdxMin = ( codelen / 2 ) - 3;
+            size_t midIdxMax = ( codelen / 2 );
+
             for ( size_t inputX=0, outputX=leftPadding; \
-                  inputX<inputWidth; \
+                  inputX<codelen; \
                   inputX++, outputX+=multiple ) 
             {
                 if (code[inputX] == 1) 
-                {                
+                {
+                    size_t drawHeight = outputHeight;
+                    
+                    // check start code, middle, endcode index.
+                    if ( ( inputX > 2 ) && ( inputX < ( codelen - 6 ) ) )
+                    {
+                        if ( ( inputX < midIdxMin ) || ( inputX > midIdxMax ) )
+                        {
+                            drawHeight = outputHeight - fntHeight;                            
+                        }
+                    }
+                                        
                     fl_imgtk::\
                     draw_fillrect( image,
-                                   outputX, 0, multiple, outputHeight,
+                                   outputX, 0, multiple, drawHeight,
                                    0x000000FF );
-#ifdef DEBUG
+#ifdef DEBUG_DRAW_LINE
                     fprintf( stdout,
                              "draw_fillrect( %p, %u, %u, %u, %u, .. );\n",
-                             image, outputX, 0, multiple, outputHeight );
+                             image, outputX, 0, multiple, drawHeight );
                     fflush( stdout );
-#endif /// of DEBUG
+#endif /// of DEBUG_DRAW_LINE
                 }
+            }
+            
+            if ( ftr != nullptr )
+            {
+                unsigned f_w = fntHeight * 0.75f;
+                unsigned p_x = leftPadding;
+                unsigned p_y = height - fntHeight;
+                
+                for( size_t cnt=0; cnt<data.size(); cnt++ )
+                {
+                    if ( cnt == 0 )
+                    {
+                        p_x = leftPadding - ( f_w * 1.1f );
+                    }
+                    else
+                    if ( cnt > 0 )
+                    {
+                        if ( cnt < ( data.size() / 2 + 1 ) )
+                        {
+                            p_x = leftPadding + ( f_w * cnt - 1 ) - multiple;
+                        }
+                        else
+                        {
+                            p_x = leftPadding + ( multiple * 6 ) + ( f_w * cnt - 1 );
+                        }
+                    }
+                        
+                    FLFTRender::Rect mbox = {0, 0, 0, 0};
+                    const char* pref = data.c_str();
+                    char tmpbuff[2] = {0,0};
+                    tmpbuff[0] = pref[cnt];
+
+                    ftr->MeasureText( tmpbuff, mbox );
+                    
+                    if ( p_y + mbox.h > height )
+                    {
+                        mbox.h = height - p_y;
+                    }
+
+                    fl_imgtk::\
+                    draw_fillrect( image,
+                                   p_x, p_y , mbox.w, mbox.h,
+                                   0xFFFFFFFF );
+                    
+                    // draw font in corrected position.
+                    ftr->RenderText( image, p_x, p_y - ( fntHeight * 0.1f ), tmpbuff );
+                }
+                
+                delete ftr;
             }
         }
 
