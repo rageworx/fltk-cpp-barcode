@@ -14,7 +14,7 @@
 #include <FL/Fl_Image.H>
 #include <FL/Fl_RGB_Image.H>
 #include <FL/Fl_Button.H>
-#include <FL/Fl_Int_Input.H>
+#include <FL/Fl_Input.H>
 #include <FL/Fl_Choice.H>
 #include <FL/fl_ask.H>
 
@@ -138,6 +138,28 @@ void fl_wcb( Fl_Widget* w )
                         inpCode->activate();                        
                         return;
                     }
+                    
+                    const char* pC = strCode.c_str();
+                    bool testDigit = true;
+                    
+                    for( size_t cnt=0; cnt<strCode.size(); cnt++ )
+                    {
+                        if ( ( pC[cnt] < '0' ) || ( pC[cnt] >'9' ) )
+                        {
+                            testDigit = false;
+                            break;
+                        }
+                    }
+                    
+                    if ( testDigit == false )
+                    {
+                        fl_message_title( "ERROR" );
+                        fl_message( "EAN13 code onlt accepts digit." );
+                        btnGenerate->activate();
+                        inpCode->activate();                        
+                        return;
+                    }
+                    
                     EAN13* ean13 = new EAN13( strCode );
                     if ( ean13 != nullptr )
                     {
@@ -183,7 +205,7 @@ void createWindow()
             chsType->callback( fl_wcb );
         }
         
-        inpCode = new Fl_Int_Input( 155, 5, 345, 25 );
+        inpCode = new Fl_Input( 155, 5, 345, 25 );
         if ( inpCode != nullptr )
         {
             inpCode->textfont( FL_COURIER );
