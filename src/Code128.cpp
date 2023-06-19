@@ -343,7 +343,7 @@ void Code128::printByteArr( std::string& msg, const uint8_t* buff, size_t blen )
 void Code128::printMetaInfo() 
 {
     fprintf( stdout, "sum: %zu\n", weight_sum);
-    fprintf( stdout, "divisor: %zu\n", DIVISOR);
+    fprintf( stdout, "divisor: %d\n", DIVISOR);
     fprintf( stdout, "sum/divisor: %zu\n", (weight_sum/DIVISOR));
     fprintf( stdout, "check sum value: %zu\n", check_sum);		
 }	
