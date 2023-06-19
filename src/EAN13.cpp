@@ -182,7 +182,6 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
             {
                 if ( ftr->FontLoaded() == true )
                 {                    
-                    ftr->FontColor( 0x000000FF ); /// black, non-alpha.
                     ftr->FontSize( fntHeight );
                 }
                 else
@@ -211,7 +210,7 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
                             drawHeight = outputHeight - fntHeight;                            
                         }
                     }
-                                        
+
                     fl_imgtk::\
                     draw_fillrect( image,
                                    outputX, 0, multiple, drawHeight,
@@ -262,12 +261,17 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
                         mbox.h = height - p_y;
                     }
 
+#ifdef DRAW_FONT_BACK_RECTANGLE
                     fl_imgtk::\
                     draw_fillrect( image,
                                    p_x, p_y , mbox.w, mbox.h,
                                    0xFFFFFFFF );
+#endif /// of DRAW_FONT_BACK_RECTANGLE
                     
                     // draw font in corrected position.
+                    ftr->FontColor( 0xFFFFFFFF ); /// draw white font to remove transparency.
+                    ftr->RenderText( image, p_x, p_y - ( fntHeight * 0.1f ), tmpbuff );
+                    ftr->FontColor( 0x000000FF ); /// black, non-alpha.
                     ftr->RenderText( image, p_x, p_y - ( fntHeight * 0.1f ), tmpbuff );
                 }
                 

@@ -257,7 +257,6 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
             {
                 if ( ftr->FontLoaded() == true )
                 {                    
-                    ftr->FontColor( 0x000000FF ); /// black, non-alpha.
                     ftr->FontSize( cfsize );
 
                     std::string str = insertSpace( data );
@@ -268,13 +267,20 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
                     unsigned w_x = ( width - mbox.w ) / 2;
                     unsigned w_y = height - mbox.h - 5;
                     
+#ifdef DRAW_FONT_BACK_RECTANGLE
                     fl_imgtk::\
                     draw_fillrect( bitmap,
                                    w_x, w_y,
                                    mbox.w, mbox.h,
                                    0xFFFFFFFF );
-                    
+#endif /// of DRAW_FONT_BACK_RECTANGLE
+
+                    // need draw it to remove transparency,
+                    ftr->FontColor( 0xFFFFFFFF ); /// white for remove transparency
                     ftr->RenderText( bitmap, w_x, w_y, str.c_str() );
+                    ftr->FontColor( 0x000000FF ); /// black, non-alpha.
+                    ftr->RenderText( bitmap, w_x, w_y, str.c_str() );
+
 #ifdef DEBUG
                     fprintf( stdout, "Font rendered [%s] at %u, %u\n",
                              str.c_str(), w_x, w_y );

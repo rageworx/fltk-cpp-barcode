@@ -223,7 +223,11 @@ void createWindow()
         if ( boxRender != nullptr )
         {
             boxRender->box( FL_FLAT_BOX );
+#ifdef DEBUG_TRANSPARENCY_DRAW_BACK
+            boxRender->color( FL_GRAY );
+#else
             boxRender->color( FL_WHITE );
+#endif /// of DEBUG_TRANSPARENCY_DRAW_BACK
         }
 
         window->end();
