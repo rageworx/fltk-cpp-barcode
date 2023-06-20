@@ -287,10 +287,6 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
                 
                 delete ftr;
             }
-            else
-            {
-                
-            }            
         }
         
         return bitmap;
