@@ -43,6 +43,8 @@ Fl_Choice*          chsType         = nullptr;
 Fl_Box*             boxRender       = nullptr;
 Fl_RGB_Image*       imgBarCode      = nullptr;
 
+static string ttfFontFaceFile       = "DejaVuSansMono.ttf";
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void applyIcon()
@@ -122,6 +124,7 @@ void fl_wcb( Fl_Widget* w )
                     Code128* c128 = new Code128( strCode );
                     if ( c128 != nullptr )
                     {
+                        c128->FontFace( ttfFontFaceFile );
                         imgBarCode = c128->getImage( img_w, img_h );
                         delete c128;
                     }
@@ -163,6 +166,7 @@ void fl_wcb( Fl_Widget* w )
                     EAN13* ean13 = new EAN13( strCode );
                     if ( ean13 != nullptr )
                     {
+                        ean13->FontFace( ttfFontFaceFile );
                         imgBarCode = ean13->getImage( img_w, img_h );
                         delete ean13;
                         
@@ -275,6 +279,12 @@ int main (int argc, char ** argv)
     parserArgvZero( argv[0] );
     presetFLTKenv();
     createWindow();
+    
+    // check where TTF is ...
+    if ( access( ttfFontFaceFile.c_str(), 0 ) != 0 )
+    {
+        ttfFontFaceFile.insert( 0, "./ttf/" );
+    }
 
     reti = Fl::run();
 

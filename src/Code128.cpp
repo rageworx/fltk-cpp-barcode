@@ -134,23 +134,12 @@ const cwItem CODE_WEIGHT[] =
 //http://en.wikipedia.org/wiki/Code_128
 
 Code128::Code128( std::string& dt )
-: weight(0), weight_sum(0), check_sum(0)        
+: BarCodeBase(dt), weight(0), weight_sum(0), check_sum(0)        
 {
-    data = dt;
 }
 
 Code128::~Code128()
 {
-}
-
-void Code128::setData( std::string& dt )
-{
-    data = dt;
-}
-
-std::string Code128::getData() 
-{
-    return data;
 }
 
 uint8_t* Code128::encode( size_t* retlen )
@@ -195,7 +184,10 @@ uint8_t* Code128::encode( size_t* retlen )
             count = appendData( CODE_WEIGHT[CODE_STOP], buffer, pos, "CODE_STOP" );
             pos += count;
 
-            //printCode128MetaInfo();
+#ifdef DEBUG_META_INFO
+            printCode128MetaInfo();
+#endif /// of DEBUG_META_INFO
+
             if ( retlen != nullptr )
                 *retlen = blen;
             
@@ -221,18 +213,17 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
         size_t multiple     = outputWidth / fullWidth;
         size_t leftPadding  = (outputWidth - (inputWidth * multiple)) / 2;
 
-        // Create an image has transparency background .
-        Fl_RGB_Image* bitmap = fl_imgtk::makeanempty( width, height, 4, 0xFFFFFF00 );
+        Fl_RGB_Image* bitmap = fl_imgtk::makeanempty( width, height, 4, colBg );
 
         if ( bitmap != nullptr )
         {   
             size_t cfsize = 0;
             
-            FLFTRender* ftr = new FLFTRender( "DejaVuSansMono.ttf", 0 );
+            FLFTRender* ftr = new FLFTRender( ttfname.c_str(), 0 );
             
             if ( ftr == nullptr )
             {
-                fprintf( stderr, "Cannot loaded font!\n" );
+                fprintf( stderr, "Font load failure = %s\n", ttfname.c_str() );
             }
             else
             {
@@ -249,7 +240,7 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
                     draw_fillrect( bitmap, 
                                    outputX, TOP_GAP, 
                                    multiple, outputHeight - cfsize + 5,
-                                   0x000000FF );
+                                   colFg );
                 }
             }
             
@@ -259,7 +250,12 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
                 {                    
                     ftr->FontSize( cfsize );
 
-                    std::string str = insertSpace( data );
+                    std::string str;
+                    
+                    if ( spaced == true )
+                        str = insertSpace( data );
+                    else
+                        str = data;
                     
                     FLFTRender::Rect mbox = {0, 0, 0, 0};
                     ftr->MeasureText( str.c_str(), mbox );
@@ -268,17 +264,18 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
                     unsigned w_y = height - mbox.h - 5;
                     
 #ifdef DRAW_FONT_BACK_RECTANGLE
+                    uint32_t maskedCol = colBg & 0x000000FF;
                     fl_imgtk::\
                     draw_fillrect( bitmap,
                                    w_x, w_y,
                                    mbox.w, mbox.h,
-                                   0xFFFFFFFF );
+                                   maskedCol );
 #endif /// of DRAW_FONT_BACK_RECTANGLE
 
                     // need draw it to remove transparency,
-                    ftr->FontColor( 0xFFFFFFFF ); /// white for remove transparency
+                    ftr->FontColor( colMaskFg ); /// white for remove transparency
                     ftr->RenderText( bitmap, w_x, w_y, str.c_str() );
-                    ftr->FontColor( 0x000000FF ); /// black, non-alpha.
+                    ftr->FontColor( colFg ); /// black, non-alpha.
                     ftr->RenderText( bitmap, w_x, w_y, str.c_str() );
 
 #ifdef DEBUG
@@ -302,50 +299,13 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
     return nullptr;
 }
 
-bool Code128::checkNumber(std::string data) 
-{
-    const char* pref = data.c_str();
-
-    for(size_t cnt=0; cnt<data.length(); cnt++ ) 
-    {
-        if ( pref[cnt] < '0' || pref[cnt] > '9' )
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void Code128::printByteArr( std::string& msg, const uint8_t* buff, size_t blen ) 
-{
-    if ( buff != nullptr )
-    {
-        uint8_t color = 1;
-        std::string sb;
-
-        for(size_t bcnt=0; bcnt<blen; bcnt++ )
-        {
-            for(size_t cnt=0; cnt<msg.size(); cnt++) 
-            {
-                char sRndr[4] = {0};
-                snprintf( sRndr, 4, "%d ", color );
-                sb += sRndr;
-            }
-
-            color ^= 1;
-        }
-        
-        fprintf( stdout, "char: %s, barcode weight: %s ", msg.c_str(), sb.c_str() );
-    }
-}
-
 void Code128::printMetaInfo() 
 {
     fprintf( stdout, "sum: %zu\n", weight_sum);
     fprintf( stdout, "divisor: %zu\n", DIVISOR);
     fprintf( stdout, "sum/divisor: %zu\n", (weight_sum/DIVISOR));
-    fprintf( stdout, "check sum value: %zu\n", check_sum);		
+    fprintf( stdout, "check sum value: %zu\n", check_sum);
+    fflush( stdout );
 }	
 
 void Code128::init() 

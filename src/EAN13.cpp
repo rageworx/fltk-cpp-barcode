@@ -83,22 +83,12 @@ const patternItem R_CODE_PATTERN[] =
 
 
 EAN13::EAN13( std::string& dt )
+ : BarCodeBase( dt )
 {
-    data = dt;
 }
 
 EAN13::~EAN13()
 {
-}
-        
-void EAN13::setData( std::string& dt ) 
-{
-    data = dt;
-}
-
-std::string EAN13::getData()
-{
-    return data;
 }
 
 uint8_t* EAN13::encode( size_t* retlen )
@@ -172,11 +162,11 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
         size_t fntHeight = leftPadding;
 
         // Create an image has transparency background .
-        Fl_RGB_Image* image = fl_imgtk::makeanempty( width, height, 4, 0xFFFFFF00 );
+        Fl_RGB_Image* image = fl_imgtk::makeanempty( width, height, 4, colBg );
 
         if ( image != nullptr )
         {
-            FLFTRender* ftr = new FLFTRender( "DejaVuSansMono.ttf", 0 );
+            FLFTRender* ftr = new FLFTRender( ttfname.c_str(), 0 );            
             
             if ( ftr != nullptr )
             {
@@ -190,7 +180,13 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
                     ftr = nullptr;
                 }
             }
-            
+#ifdef DEBUG
+            else
+            {
+                fprintf( stderr, "Font load failure = %s\n", ttfname.c_str() );
+            }                
+#endif /// of DEBUG
+
             size_t midIdxMin = ( codelen / 2 ) - 3;
             size_t midIdxMax = ( codelen / 2 );
 
@@ -214,7 +210,7 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
                     fl_imgtk::\
                     draw_fillrect( image,
                                    outputX, 0, multiple, drawHeight,
-                                   0x000000FF );
+                                   colFg );
 #ifdef DEBUG_DRAW_LINE
                     fprintf( stdout,
                              "draw_fillrect( %p, %u, %u, %u, %u, .. );\n",
@@ -262,16 +258,17 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
                     }
 
 #ifdef DRAW_FONT_BACK_RECTANGLE
+                    uint32_t maskedCol = colBg & 0x000000FF;
                     fl_imgtk::\
                     draw_fillrect( image,
                                    p_x, p_y , mbox.w, mbox.h,
-                                   0xFFFFFFFF );
+                                   maskedCol );
 #endif /// of DRAW_FONT_BACK_RECTANGLE
                     
                     // draw font in corrected position.
-                    ftr->FontColor( 0xFFFFFFFF ); /// draw white font to remove transparency.
+                    ftr->FontColor( colMaskFg ); /// draw white font to remove transparency.
                     ftr->RenderText( image, p_x, p_y - ( fntHeight * 0.1f ), tmpbuff );
-                    ftr->FontColor( 0x000000FF ); /// black, non-alpha.
+                    ftr->FontColor( colFg );
                     ftr->RenderText( image, p_x, p_y - ( fntHeight * 0.1f ), tmpbuff );
                 }
                 
@@ -342,34 +339,6 @@ size_t EAN13::appendData( const void* src, size_t srclen, uint8_t* dst, size_t p
     return 0;
 }
 
-void EAN13::printByteArr( const char* msg, const uint8_t* buff, size_t bufflen )
-{
-    if( buff != nullptr )
-    {
-        const uint8_t* pb = buff;
-        std::string sb;
-        
-        for( size_t cnt=0; cnt<bufflen; cnt++ )
-        {
-            char strndr[4] = {0};
-            snprintf( strndr, 4, "%d ", buff[cnt] );
-            sb += strndr;
-        }
-
-#ifdef DEBUG
-        if ( msg != nullptr )
-        {
-            fprintf( stdout, "char: %s, barcode weight: %s\n", msg, sb.c_str() );
-        }
-        else
-        {
-            fprintf( stdout, "barcode weight: %s\n", sb.c_str() );
-        }
-
-        fflush( stdout );
-#endif /// of DEBUG
-    }    
-}
 
 bool EAN13::checkNumber(std::string& data) 
 {

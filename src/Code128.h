@@ -1,29 +1,33 @@
 #ifndef __CODE128_H__
 #define __CODE128_H__
 
-class Code128 
+#include "BarCodeBase.h"
+
+class Code128 : public BarCodeBase
 {
     public:
         Code128( std::string& dt );
         ~Code128();
-
+        
     public:
-        void setData( std::string& dt );
-        std::string getData();
-        Fl_RGB_Image* getImage( uint32_t width, uint32_t height);
-        void printByteArr( std::string& msg, const uint8_t* buff, size_t blen );
-        void printMetaInfo();
+        void   Spaced( bool f ) { spaced = f; }
+        bool   Spaced()         { return spaced; }
+        
+    public:
+        Fl_RGB_Image* getImage( unsigned width, unsigned height );
 
-    private:
-        void init();
-        uint8_t* initBuffer(size_t dataLen, size_t* retlen);
+    protected:
+        void        printMetaInfo();
+        size_t      appendData(const void* weights, uint8_t* dst, int pos, std::string debugdata = nullptr);
+
+    protected:
+        void        init();
+        uint8_t*    initBuffer(size_t dataLen, size_t* retlen = nullptr);
         std::string insertSpace(std::string& data);
-        size_t appendData(const void* weights, uint8_t* dst, int pos, std::string debugdata);
-        bool checkNumber(std::string data);
-        uint8_t* encode( size_t* retlen = nullptr );
+        uint8_t*    encode( size_t* retlen );
 
     private:
-        std::string data;
+        bool        spaced;
         size_t      weight;
         size_t      weight_sum;
         size_t      check_sum;
