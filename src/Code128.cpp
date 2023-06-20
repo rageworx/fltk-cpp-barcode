@@ -302,7 +302,7 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
 void Code128::printMetaInfo() 
 {
     fprintf( stdout, "sum: %zu\n", weight_sum);
-    fprintf( stdout, "divisor: %zu\n", DIVISOR);
+    fprintf( stdout, "divisor: %d\n", DIVISOR);
     fprintf( stdout, "sum/divisor: %zu\n", (weight_sum/DIVISOR));
     fprintf( stdout, "check sum value: %zu\n", check_sum);
     fflush( stdout );
