@@ -16,3 +16,4 @@ I don't use JAVA, sorry for that.
 
 - Code 128 [Wiki](http://en.wikipedia.org/wiki/Code_128)
 - International Article Number [Wiki](http://en.wikipedia.org/wiki/International_Article_Number_(EAN))
+- Nayuki's codes of [QR code](https://github.com/nayuki/QR-Code-generator)
