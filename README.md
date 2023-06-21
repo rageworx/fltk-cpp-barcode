@@ -2,6 +2,8 @@
       
 An implemented project from [coolbong's android-barcode](https://github.com/coolbong/android-barcode).
 
+Plus, support QR code generating by Nayuki's QR code project ( see references )
+
 ## Why not JAVA ?
 
 I don't use JAVA, sorry for that.
@@ -11,6 +13,11 @@ I don't use JAVA, sorry for that.
 - FLTK or [FLTK-custom](https://github.com/rageworx/fltk-custom)
 - [fl_imgtk](https://github.com/rageworx/fl_imgtk)
 - [FLFTRender](https://github.com/rageworx/FLFTRender)
+
+## Runs on
+
+- Any platform by FLTK availed to build.
+- Tested on Linux (amd64, aarch64) and Windows (MinGW-W64, amd64)
 
 ## references 
 

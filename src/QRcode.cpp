@@ -175,7 +175,7 @@ uint8_t* QRCode::encode( size_t* retlen )
             {
                 qr = QrCode::encodeText( data.c_str(), errCorLvl );
             }
-#ifdef SUPPROR_UTF8_KANJI            
+#ifdef SUPPROR_UTF8_KANJI /// fixme : this is still buggy, need to fixed.
             else
             if ( utf8testr == 4 ) /// 13bit UTF, KANJI ? 
             {

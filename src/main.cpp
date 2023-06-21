@@ -18,12 +18,14 @@
 #include <FL/Fl_Input.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Menu_Button.H>
+#include <FL/Fl_Native_File_Chooser.H>
 #include <FL/fl_ask.H>
 
 #include "resource.h"
 #include "Code128.h"
 #include "EAN13.h"
 #include "QRcode.h"
+#include "fl_pngwriter.h"
 
 using namespace std;
 
@@ -84,6 +86,51 @@ void applyIcon()
                      (LPARAM)hIconWindowSmall );
     }
 #endif
+}
+
+bool Save2PNG()
+{
+    if ( imgBarCode == nullptr )
+        return false;
+    
+    Fl_Native_File_Chooser nFC;
+
+    static string presetfn;
+
+    nFC.title( "Select PNG file to save." );
+    nFC.type( Fl_Native_File_Chooser::BROWSE_SAVE_FILE );
+    nFC.options( Fl_Native_File_Chooser::USE_FILTER_EXT
+                 | Fl_Native_File_Chooser::SAVEAS_CONFIRM );
+    nFC.filter( "PNG Image\t*.png" );
+
+    int retVal = nFC.show();
+
+    if ( retVal == 0 )
+    {
+        string imgFNameUTF8 = nFC.filename();
+        
+        // auto appends "png" ext.
+
+#ifdef _WIN32
+        size_t seppos = imgFNameUTF8.find_last_of( "\\" );
+        if ( seppos == string::npos )
+            seppos = imgFNameUTF8.find_last_of( "/" );
+#else
+        size_t seppos = imgFNameUTF8.find_last_of( "/" );
+#endif
+        if ( seppos == string::npos )
+            seppos = 0;
+        
+        size_t extdotpos = imgFNameUTF8.find_last_of( seppos, '.' );
+        if ( extdotpos == string::npos )
+        {
+            imgFNameUTF8 += ".png";
+        }
+        
+        return fl_image_write_to_pngfile( imgBarCode, imgFNameUTF8.c_str(), 7 );
+    }
+
+    return false;
 }
 
 void fl_wcb( Fl_Widget* w )
@@ -215,15 +262,9 @@ void fl_wcb( Fl_Widget* w )
         switch( popMenu->value() )
         {
             case 0:
-                printf( "test::saveto PNG.\n" );
-                fflush( stdout );
+                Save2PNG();
                 break;
-                
-            case 1:
-                printf( "test::saveto SVG.\n" );
-                fflush( stdout );
-                break;
-                
+
             default:
                 break;
         }
@@ -234,7 +275,7 @@ void fl_wcb( Fl_Widget* w )
 
 void createWindow()
 {
-    window = new Fl_Double_Window( 600, 300, "Barcode Generator Test" );
+    window = new Fl_Double_Window( 600, 300, "Barcode/QR Generator Testing" );
     if ( window != nullptr )
     {
         chsType = new Fl_Choice( 50, 5, 100, 25, "Type : " );
@@ -283,6 +324,7 @@ void createWindow()
         {
             popMenu->type( Fl_Menu_Button::POPUP3 );
             popMenu->add( "Save to PNG ...\t", FL_C_ + 's', 0, 0, 0 );
+            //SVG currently not supporte.
             //popMenu->add( "Save to SVG ...\t", FL_C_ + 'v', 0, 0, 0 );
             popMenu->callback( fl_wcb );
         }
