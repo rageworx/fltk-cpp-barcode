@@ -13,14 +13,17 @@
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Image.H>
 #include <FL/Fl_RGB_Image.H>
+#include <FL/Fl_SVG_Image.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Input.H>
 #include <FL/Fl_Choice.H>
+#include <FL/Fl_Menu_Button.H>
 #include <FL/fl_ask.H>
 
 #include "resource.h"
 #include "Code128.h"
 #include "EAN13.h"
+#include "QRcode.h"
 
 using namespace std;
 
@@ -42,6 +45,7 @@ Fl_Button*          btnGenerate     = nullptr;
 Fl_Choice*          chsType         = nullptr;
 Fl_Box*             boxRender       = nullptr;
 Fl_RGB_Image*       imgBarCode      = nullptr;
+Fl_Menu_Button*     popMenu         = nullptr;
 
 static string ttfFontFaceFile       = "DejaVuSansMono.ttf";
 
@@ -180,6 +184,18 @@ void fl_wcb( Fl_Widget* w )
                     }
                 }
                 break;
+                
+                case 2: /// == QR
+                {
+                    QRCode* qrc = new QRCode( strCode );
+                    if ( qrc != nullptr )
+                    {
+                        imgBarCode = qrc->getImage( img_w, img_h );
+                        
+                        delete qrc;
+                    }
+                }
+                break;
             }
         }
         
@@ -191,6 +207,27 @@ void fl_wcb( Fl_Widget* w )
         
         btnGenerate->activate();
         inpCode->activate();
+        return;
+    }
+    
+    if ( w == popMenu )
+    {
+        switch( popMenu->value() )
+        {
+            case 0:
+                printf( "test::saveto PNG.\n" );
+                fflush( stdout );
+                break;
+                
+            case 1:
+                printf( "test::saveto SVG.\n" );
+                fflush( stdout );
+                break;
+                
+            default:
+                break;
+        }
+        
         return;
     }
 }
@@ -205,6 +242,7 @@ void createWindow()
         {
             chsType->add( "CODE128" );
             chsType->add( "EAN13" );
+            chsType->add( "QR" );
             chsType->value( 0 );
             chsType->callback( fl_wcb );
         }
@@ -232,6 +270,21 @@ void createWindow()
 #else
             boxRender->color( FL_WHITE );
 #endif /// of DEBUG_TRANSPARENCY_DRAW_BACK
+        }
+
+#ifdef __APPLE__            
+    #define FL_C_   FL_COMMAND
+#else
+    #define FL_C_   FL_CTRL
+#endif /// of __APPLE__
+
+        popMenu = new Fl_Menu_Button( 0, 0, window->w(), window->h() );
+        if ( popMenu != nullptr )
+        {
+            popMenu->type( Fl_Menu_Button::POPUP3 );
+            popMenu->add( "Save to PNG ...\t", FL_C_ + 's', 0, 0, 0 );
+            //popMenu->add( "Save to SVG ...\t", FL_C_ + 'v', 0, 0, 0 );
+            popMenu->callback( fl_wcb );
         }
 
         window->end();
