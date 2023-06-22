@@ -42,6 +42,11 @@ char* argv_me_path                  = nullptr;
 char* argv_me_bin                   = nullptr;
 
 Fl_Double_Window*   window          = nullptr;
+Fl_Group*           grpDiv0         = nullptr;
+Fl_Group*           grpDiv1         = nullptr;
+Fl_Group*           grpDiv2         = nullptr;
+Fl_Group*           grpDiv3         = nullptr;
+Fl_Group*           grpDiv10        = nullptr;
 Fl_Input*           inpCode         = nullptr;
 Fl_Button*          btnGenerate     = nullptr;
 Fl_Choice*          chsType         = nullptr;
@@ -397,41 +402,94 @@ void createWindow()
     window = new Fl_Double_Window( 600, 300, "Barcode/QR Generator Testing" );
     if ( window != nullptr )
     {
-        chsType = new Fl_Choice( 50, 5, 100, 25, "Type : " );
-        if ( chsType != nullptr )
+        grpDiv0 = new Fl_Group( 0, 0, 600, 40 );
+        if ( grpDiv0 != nullptr )
         {
-            chsType->box( FL_THIN_UP_BOX );
-            chsType->when( FL_WHEN_CHANGED );
-            chsType->add( "CODE128" );
-            chsType->add( "EAN13" );
-            chsType->add( "QR" );
-            chsType->value( 0 );
-            chsType->callback( fl_wcb );
+            grpDiv0->begin();
+            
+            grpDiv1 = new Fl_Group( 50, 0, 105, 30 );
+            if ( grpDiv1 != nullptr )
+            {
+                grpDiv1->begin();
+            }
+            
+            chsType = new Fl_Choice( 50, 5, 100, 25, "Type : " );
+            if ( chsType != nullptr )
+            {
+                chsType->box( FL_THIN_UP_BOX );
+                chsType->when( FL_WHEN_CHANGED );
+                chsType->add( "CODE128" );
+                chsType->add( "EAN13" );
+                chsType->add( "QR" );
+                chsType->value( 0 );
+                chsType->callback( fl_wcb );
+            }
+
+            if ( grpDiv1 != nullptr )
+            {
+                grpDiv1->end();
+            }
+
+            grpDiv2 = new Fl_Group( 155, 0, 350, 30 );
+            if ( grpDiv2 != nullptr )
+            {
+                grpDiv2->begin();
+            }
+            
+            inpCode = new Fl_Input( 155, 5, 345, 25 );
+            if ( inpCode != nullptr )
+            {
+                inpCode->textfont( FL_COURIER );
+                inpCode->when( FL_WHEN_ENTER_KEY );
+                inpCode->callback( fl_wcb );
+            }
+
+            if ( grpDiv2 != nullptr )
+            {
+                grpDiv2->end();
+            }
+
+            grpDiv3 = new Fl_Group( 505, 0, 95, 30 );
+            if ( grpDiv3 != nullptr )
+            {
+                grpDiv3->begin();
+            }
+            
+            btnGenerate = new Fl_Button( 505, 5, 90, 25, "Generate" );
+            if ( btnGenerate != nullptr )
+            {
+                btnGenerate->callback( fl_wcb );
+            }
+
+            if ( grpDiv2 != nullptr )
+            {
+                grpDiv2->end();
+            }
+
+            grpDiv0->end();
+            
+            if ( grpDiv2 != nullptr )
+                grpDiv0->resizable( grpDiv2 );
         }
         
-        inpCode = new Fl_Input( 155, 5, 345, 25 );
-        if ( inpCode != nullptr )
+        grpDiv10 = new Fl_Group( 0,40, 600, 260 );
+        if ( grpDiv10 != nullptr )
         {
-            inpCode->textfont( FL_COURIER );
-            inpCode->when( FL_WHEN_ENTER_KEY );
-            inpCode->callback( fl_wcb );
-        }
-        
-        btnGenerate = new Fl_Button( 505, 5, 90, 25, "Generate" );
-        if ( btnGenerate != nullptr )
-        {
-            btnGenerate->callback( fl_wcb );
-        }
-        
-        boxRender = new Fl_Box( 5, 40, 590, 255 );
-        if ( boxRender != nullptr )
-        {
-            boxRender->box( FL_FLAT_BOX );
+            grpDiv10->begin();
+            
+            boxRender = new Fl_Box( 0, 40, 600, 260 );
+            if ( boxRender != nullptr )
+            {
+                boxRender->box( FL_THIN_DOWN_BOX );
+                boxRender->align( FL_ALIGN_CLIP );
 #ifdef DEBUG_TRANSPARENCY_DRAW_BACK
-            boxRender->color( FL_GRAY );
+                boxRender->color( FL_GRAY );
 #else
-            boxRender->color( FL_WHITE );
+                boxRender->color( FL_WHITE );
 #endif /// of DEBUG_TRANSPARENCY_DRAW_BACK
+            }
+            
+            grpDiv10->end();
         }
 
 #ifdef __APPLE__            
@@ -452,8 +510,12 @@ void createWindow()
             disablePopMenuSVG();
         }
 
+        if ( grpDiv10 != nullptr )
+            window->resizable( grpDiv10 );
+
         window->end();
         window->callback( fl_wcb );
+        window->size_range( window->w(), window->h() );
         window->show();
     }
     
