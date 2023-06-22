@@ -6,17 +6,24 @@
 #include <string>
 #include <vector>
 
+#include <FL/Fl.H>
 #include <FL/fl_utf8.h>
 #include <FL/Fl_SVG_Image.H>
+#include <FL/Fl_Image_Surface.H>
+#include <FL/fl_draw.H>
 #include <FLFTRender.h>
 #include <fl_imgtk.h>
+#ifdef USE_OMP
+#include <omp.h>
+#endif /// of USE_OMP
 
 #include "QRCode.h"
 #include "mmath.h"
 #include "qrcodegen.hpp"
 
-#define  SVG_TMPBUFF_LEN        (1024*512)
-
+#define SVG_TMPBUFF_LEN        (1024*512)
+#define Swap32( _X_ )          (_X_ & 0x000000FF) << 24 | (_X_ & 0x0000FF00) << 8 | \
+                               (_X_ & 0x00FF0000) >> 8 | (_X_ & 0xFF000000) >> 24;
 using namespace std;
 using std::uint8_t;
 using qrcodegen::QrCode;
@@ -41,23 +48,100 @@ QRCode::~QRCode()
 
 Fl_RGB_Image* QRCode::getImage( unsigned width, unsigned height )
 {    
-    Fl_SVG_Image* tmpimg = getImage();
-    if ( tmpimg != nullptr )
+    Fl_SVG_Image* svgimg = getImage();
+    if ( svgimg != nullptr )
     {
-        unsigned min_l = __MIN( width, height );
+        unsigned svg_min_l = __MIN( width, height );
+                        
+        Fl_Image_Surface* imgsfc = new Fl_Image_Surface( width, height );
+        if ( imgsfc != nullptr )
+        {
+            Fl_Surface_Device::push_current(imgsfc);
+            fl_color(0xFF7FFF00); /// masking image color
+            fl_rectf(0, 0, width, height );
+            svgimg->resize( svg_min_l, svg_min_l );
+            svgimg->draw( ( width - svg_min_l )/2 , (height - svg_min_l)/2 ,
+                          svg_min_l, svg_min_l );
+            delete svgimg;
         
-        Fl_RGB_Image* retimg = (Fl_RGB_Image*)tmpimg->copy( min_l, min_l );
+            // return image must be 3 depth - need to convert it.
+            Fl_RGB_Image* convimg = imgsfc->image();
         
-        delete tmpimg;
+            Fl_Surface_Device::pop_current();
+
+            delete imgsfc;
+
+            if ( convimg != nullptr )
+            {
+                Fl_RGB_Image* retimg = fl_imgtk::makeanempty( width, height, 4, colBg );
+                
+                if ( retimg != nullptr )
+                {
+                    // post process 
+                    const uint8_t* pSrc = (const uint8_t*)convimg->data()[0];
+                    uint8_t* pDst = (uint8_t*)retimg->data()[0];
+                    size_t   bufflen = convimg->w() * convimg->h();
+                    size_t   depth   = convimg->d();
+                    uint8_t  colfg_r = uint8_t( colFg >> 24 );
+                    uint8_t  colfg_g = uint8_t( ( colFg & 0x00FF0000 ) >> 16 );
+                    uint8_t  colfg_b = uint8_t( ( colFg & 0x0000FF00 ) >> 8 );
+                                    
+                    #pragma omp parallel for
+                    for( size_t cnt=0; cnt<bufflen; cnt++ )
+                    {
+                        uint32_t* pcastdst = (uint32_t*)&pDst[cnt*4];
+                        
+                        if ( ( pSrc[ cnt * depth + 0 ] == colfg_r ) &&
+                             ( pSrc[ cnt * depth + 1 ] == colfg_g ) &&
+                             ( pSrc[ cnt * depth + 2 ] == colfg_b ) )
+                        {
+                            *pcastdst = Swap32( colFg );
+                        }
+                        else
+                        {
+                            *pcastdst = Swap32( colBg );
+                        }
+                    }
+                
+                    retimg->uncache();
+
+                    delete convimg;
+                    
+                    return retimg;
+                }
+                
+                delete convimg;
+            }
+        }
         
-        return retimg;
+        delete svgimg;
     }
+    
     return nullptr;
 }
 
 Fl_SVG_Image* QRCode::getImage()
 {
-    if ( qrc_inst != nullptr )
+    char* renderbuff = NULL;
+    
+    size_t bufflen = getSVG( &renderbuff );
+
+    if ( ( renderbuff != nullptr ) && ( bufflen > 0 ) )
+    {
+        Fl_SVG_Image* retImg = new Fl_SVG_Image( "fltk_cpp_barcode_svg_image", 
+                                                 (const char*)renderbuff );
+        
+        delete[] renderbuff;
+        
+        return retImg;
+    }
+    
+    return nullptr;
+}
+
+size_t QRCode::getSVG( char** svgbuff )
+{
+    if ( ( qrc_inst != nullptr ) && ( svgbuff != nullptr ) )
     {
         QrCode& qr = *(QrCode*)qrc_inst;
 
@@ -67,7 +151,7 @@ Fl_SVG_Image* QRCode::getImage()
 #endif /// of DEBUG
 
         if ( encode( nullptr ) == nullptr )
-            return nullptr;
+            return 0;
         
         size_t border = qrc_border;
         
@@ -110,18 +194,25 @@ Fl_SVG_Image* QRCode::getImage()
         
         strcat_s( renderbuff, SVG_TMPBUFF_LEN, "\" fill=\"#000000\"/>\n</svg>\n" );
 
-#ifdef DEBUG_SVG_V        
+#ifdef DEBUG_SVG_V
         printf( "renderbuff = \n%s", renderbuff );
         fflush( stdout );
 #endif /// of DEBUG_SVG_V
 
-        Fl_SVG_Image* retImg = new Fl_SVG_Image( "fltk_cpp_barcode_svg_image", 
-                                                 (const char*)renderbuff );
+        size_t renderbufflen = strlen( renderbuff ) + 1;
         
-        return retImg;
+        *svgbuff = new char[ renderbufflen ];
+
+        if ( *svgbuff != nullptr )
+        {
+            memset( *svgbuff, 0, renderbufflen );
+            memcpy( *svgbuff, renderbuff, renderbufflen - 1 );
+            
+            return renderbufflen;
+        }
     }
     
-    return nullptr;
+    return 0;    
 }
 
 uint8_t* QRCode::encode( size_t* retlen )

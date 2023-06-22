@@ -12,6 +12,7 @@ class QRCode : public BarCodeBase
     public:
         Fl_RGB_Image* getImage( unsigned width, unsigned height );
         Fl_SVG_Image* getImage();
+        size_t        getSVG( char** svgbuff );
         
     public:
         void        border( size_t bsz ) { qrc_border = bsz; if ( qrc_border < 2 ) qrc_border = 2; }

@@ -47,6 +47,7 @@ Fl_Button*          btnGenerate     = nullptr;
 Fl_Choice*          chsType         = nullptr;
 Fl_Box*             boxRender       = nullptr;
 Fl_RGB_Image*       imgBarCode      = nullptr;
+char*               svgQRCode       = nullptr;
 Fl_Menu_Button*     popMenu         = nullptr;
 
 static string ttfFontFaceFile       = "DejaVuSansMono.ttf";
@@ -86,6 +87,97 @@ void applyIcon()
                      (LPARAM)hIconWindowSmall );
     }
 #endif
+}
+
+void disablePopMenuSVG()
+{
+    if ( popMenu != nullptr )
+    {
+        const Fl_Menu_Item* item = popMenu->menu();
+        if ( item != nullptr )
+        {
+            item++;
+            Fl_Menu_Item* forcecasted = (Fl_Menu_Item*)item;
+            forcecasted->deactivate();
+        }
+    }
+}
+
+void enablePopMenuSVG()
+{
+    if ( popMenu != nullptr )
+    {
+        const Fl_Menu_Item* item = popMenu->menu();
+        if ( item != nullptr )
+        {
+            item++;
+            Fl_Menu_Item* forcecasted = (Fl_Menu_Item*)item;
+            forcecasted->activate();
+        }
+    }
+}
+
+bool Save2SVG()
+{
+    if ( svgQRCode == nullptr )
+        return false;
+    
+    Fl_Native_File_Chooser nFC;
+
+    static string presetfn;
+
+    nFC.title( "Select PNG file to save." );
+    nFC.type( Fl_Native_File_Chooser::BROWSE_SAVE_FILE );
+    nFC.options( Fl_Native_File_Chooser::USE_FILTER_EXT
+                 | Fl_Native_File_Chooser::SAVEAS_CONFIRM );
+    nFC.filter( "PNG Image\t*.png" );
+
+    int retVal = nFC.show();
+
+    if ( retVal == 0 )
+    {
+        string imgFNameUTF8 = nFC.filename();
+        
+        // auto appends "svg" ext.
+
+#ifdef _WIN32
+        size_t seppos = imgFNameUTF8.find_last_of( "\\" );
+        if ( seppos == string::npos )
+            seppos = imgFNameUTF8.find_last_of( "/" );
+#else
+        size_t seppos = imgFNameUTF8.find_last_of( "/" );
+#endif
+        if ( seppos == string::npos )
+            seppos = 0;
+        
+        size_t extdotpos = imgFNameUTF8.find_last_of( seppos, '.' );
+        if ( extdotpos == string::npos )
+        {
+            imgFNameUTF8 += ".svg";
+        }
+                
+        printf( "txtbuff = %p\n", svgQRCode );
+        fflush( stdout );
+        
+        size_t txtbufflen = strlen( svgQRCode );
+        
+        printf( "txtbufflen = %zu\n", txtbufflen );
+        fflush( stdout );
+        
+        if ( txtbufflen > 0 )
+        {
+            FILE* fp = fopen( imgFNameUTF8.c_str(), "wb" );
+            if ( fp != nullptr )
+            {
+                fwrite( svgQRCode, txtbufflen, 1, fp );
+                fclose( fp );
+                
+                return true;
+            }
+        }
+    }
+
+    return false;    
 }
 
 bool Save2PNG()
@@ -138,11 +230,6 @@ void fl_wcb( Fl_Widget* w )
     if ( w == window )
     {
         window->deactivate();
-        if ( imgBarCode != nullptr )
-        {
-            boxRender->deimage();
-            delete imgBarCode;
-        }
         window->hide();
         return;
     }
@@ -163,6 +250,12 @@ void fl_wcb( Fl_Widget* w )
                 boxRender->deimage();
                 delete imgBarCode;
                 imgBarCode = nullptr;
+            }
+            
+            if ( svgQRCode != nullptr )
+            {
+                delete[] svgQRCode;
+                svgQRCode = nullptr;
             }
             
             unsigned img_w = boxRender->w() - 10;
@@ -237,6 +330,8 @@ void fl_wcb( Fl_Widget* w )
                     QRCode* qrc = new QRCode( strCode );
                     if ( qrc != nullptr )
                     {
+                        qrc->getSVG( &svgQRCode );
+                        
                         imgBarCode = qrc->getImage( img_w, img_h );
                         
                         delete qrc;
@@ -264,8 +359,32 @@ void fl_wcb( Fl_Widget* w )
             case 0:
                 Save2PNG();
                 break;
+                
+            case 1:
+                Save2SVG();
+                break;
 
             default:
+                break;
+        }
+        
+        return;
+    }
+    
+    if ( w == chsType )
+    {
+        if ( window->visible() == 0 )
+            return;
+        
+        switch( chsType->value() )
+        {
+            case 0: // Code128
+            case 1: // EAN13
+                disablePopMenuSVG();
+                break;
+            
+            case 2: // QR
+                enablePopMenuSVG();
                 break;
         }
         
@@ -281,6 +400,8 @@ void createWindow()
         chsType = new Fl_Choice( 50, 5, 100, 25, "Type : " );
         if ( chsType != nullptr )
         {
+            chsType->box( FL_THIN_UP_BOX );
+            chsType->when( FL_WHEN_CHANGED );
             chsType->add( "CODE128" );
             chsType->add( "EAN13" );
             chsType->add( "QR" );
@@ -324,9 +445,11 @@ void createWindow()
         {
             popMenu->type( Fl_Menu_Button::POPUP3 );
             popMenu->add( "Save to PNG ...\t", FL_C_ + 's', 0, 0, 0 );
-            //SVG currently not supporte.
-            //popMenu->add( "Save to SVG ...\t", FL_C_ + 'v', 0, 0, 0 );
+            popMenu->add( "Save to SVG ...\t", FL_C_ + 'v', 0, 0, 0 );
             popMenu->callback( fl_wcb );
+            
+            // disable SVG for now.
+            disablePopMenuSVG();
         }
 
         window->end();
@@ -382,6 +505,16 @@ int main (int argc, char ** argv)
     }
 
     reti = Fl::run();
+    
+    if ( imgBarCode != nullptr )
+    {
+        delete imgBarCode;
+    }
+    
+    if ( svgQRCode != nullptr )
+    {
+        delete svgQRCode;
+    }
 
     if ( argv_me_path != NULL )
     {
