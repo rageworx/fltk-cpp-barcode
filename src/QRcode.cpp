@@ -17,17 +17,25 @@
 #include <omp.h>
 #endif /// of USE_OMP
 
-#include "QRCode.h"
+#include "QRcode.h"
 #include "mmath.h"
 #include "qrcodegen.hpp"
 
 #define SVG_TMPBUFF_LEN        (1024*512)
 #define Swap32( _X_ )          (_X_ & 0x000000FF) << 24 | (_X_ & 0x0000FF00) << 8 | \
-                               (_X_ & 0x00FF0000) >> 8 | (_X_ & 0xFF000000) >> 24;
+                               (_X_ & 0x00FF0000) >> 8 | (_X_ & 0xFF000000) >> 24
+
 using namespace std;
 using std::uint8_t;
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
+
+#ifdef __APPLE__
+size_t strcat_s(char *d, size_t n, char const *s )
+{
+    return snprintf(d, n, "%s%s", d, s);
+}
+#endif /// of __APPLE__
 
 QRCode::QRCode( std::string& dt )
  : BarCodeBase( dt ), qrc_inst( nullptr ) , qrc_border( 2 )
@@ -167,7 +175,7 @@ size_t QRCode::getSVG( char** svgbuff )
                   "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n" \
                   "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 " \
                   "%zu %zu\" stroke=\"none\">\n" \
-                  "\t<rect width=\"100%\" height=\"100%\" fill=\"#FFFFFF\"/>\n" \
+                  "\t<rect width=\"100%%\" height=\"100%%\" fill=\"#FFFFFF\"/>\n" \
                   "\t<path d=\"",
                   qr.getSize() + border * 2,
                   qr.getSize() + border * 2 );
