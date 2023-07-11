@@ -69,9 +69,11 @@ Fl_RGB_Image* QRCode::getImage( unsigned width, unsigned height )
         {
             border = ( INT_MAX - qr.getSize() )/ 2;
         }
+        
+        size_t qrsize = qr.getSize();
 
-        unsigned cast_w = width / qr.getSize() - ( border / 2 );
-        unsigned cast_h = height / qr.getSize() - ( border / 2 );
+        unsigned cast_w = width / qrsize - ( border / 2 );
+        unsigned cast_h = height / qrsize - ( border / 2 );
 
         if ( cast_w > cast_h )
         {
@@ -83,16 +85,16 @@ Fl_RGB_Image* QRCode::getImage( unsigned width, unsigned height )
             cast_h = cast_w;
         }
 
-        unsigned start_x = ( width - ( cast_w * qr.getSize() ) - ( border / 2 ) ) / 2;
-        unsigned start_y = ( height - ( cast_h * qr.getSize() ) - ( border / 2 ) ) / 2;
+        unsigned start_x = ( width - ( cast_w * qrsize ) - ( border / 2 ) ) / 2;
+        unsigned start_y = ( height - ( cast_h * qrsize ) - ( border / 2 ) ) / 2;
 
         Fl_RGB_Image* retimg = fl_imgtk::makeanempty( width, height, 4, colBg );
         
         if ( retimg != nullptr )
         {
-            for (size_t y=0; y<qr.getSize(); y++) 
+            for (size_t y=0; y<qrsize; y++) 
             {
-                for (size_t x=0; x<qr.getSize(); x++) 
+                for (size_t x=0; x<qrsize; x++) 
                 {
                     if ( qr.getModule(x, y) ) 
                     {
