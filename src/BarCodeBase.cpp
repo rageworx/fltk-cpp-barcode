@@ -49,6 +49,26 @@ std::string BarCodeBase::FontFace()
     return ttfname;
 }
 
+void BarCodeBase::ForegroundColor( uint32_t c )
+{
+    colFg = c;
+}
+
+uint32_t BarCodeBase::ForegroundColor()
+{
+    return colFg;
+}
+
+void BarCodeBase::BackgroundColor( uint32_t c )
+{
+    colBg = c;
+}
+
+uint32_t BarCodeBase::BackgroundColor()
+{
+    return colBg;
+}
+
 void BarCodeBase::printByteArr( const char* msg, const uint8_t* buff, size_t bufflen )
 {
     if( buff != nullptr )

@@ -12,6 +12,10 @@ class BarCodeBase
         std::string     Data();
         void            FontFace( std::string& ffname );
         std::string     FontFace();
+        void            ForegroundColor( uint32_t c );
+        uint32_t        ForegroundColor();
+        void            BackgroundColor( uint32_t c );
+        uint32_t        BackgroundColor();
         
     public:
         virtual \

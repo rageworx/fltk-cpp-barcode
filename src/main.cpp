@@ -291,7 +291,7 @@ void fl_wcb( Fl_Widget* w )
                         fl_message_title( "ERROR" );
                         fl_message( "EAN13 code requires 13 digits." );
                         btnGenerate->activate();
-                        inpCode->activate();                        
+                        inpCode->activate();
                         return;
                     }
                     
@@ -312,7 +312,7 @@ void fl_wcb( Fl_Widget* w )
                         fl_message_title( "ERROR" );
                         fl_message( "EAN13 code onlt accepts digit." );
                         btnGenerate->activate();
-                        inpCode->activate();                        
+                        inpCode->activate();
                         return;
                     }
                     
@@ -339,6 +339,8 @@ void fl_wcb( Fl_Widget* w )
                     QRCode* qrc = new QRCode( strCode );
                     if ( qrc != nullptr )
                     {
+                        // testing random color --
+                        //qrc->ForegroundColor( rand() );
                         qrc->getSVG( &svgQRCode );
                         
                         imgBarCode = qrc->getImage( img_w, img_h );
