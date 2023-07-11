@@ -56,75 +56,64 @@ QRCode::~QRCode()
 
 Fl_RGB_Image* QRCode::getImage( unsigned width, unsigned height )
 {    
-    Fl_SVG_Image* svgimg = getImage();
-    if ( svgimg != nullptr )
+    if ( qrc_inst != nullptr )
     {
-        unsigned svg_min_l = __MIN( width, height );
-                        
-        Fl_Image_Surface* imgsfc = new Fl_Image_Surface( width, height );
-        if ( imgsfc != nullptr )
+        QrCode& qr = *(QrCode*)qrc_inst;
+
+        if ( encode( nullptr ) == nullptr )
+            return 0;
+        
+        size_t border = qrc_border;
+        
+        if ( border > INT_MAX / 2 || border * 2 > INT_MAX - qr.getSize() )
         {
-            Fl_Surface_Device::push_current(imgsfc);
-            fl_color(0xFF7FFF00); /// masking image color
-            fl_rectf(0, 0, width, height );
-            svgimg->resize( svg_min_l, svg_min_l );
-            svgimg->draw( ( width - svg_min_l )/2 , (height - svg_min_l)/2 ,
-                          svg_min_l, svg_min_l );
-            delete svgimg;
-        
-            // return image must be 3 depth - need to convert it.
-            Fl_RGB_Image* convimg = imgsfc->image();
-        
-            Fl_Surface_Device::pop_current();
+            border = ( INT_MAX - qr.getSize() )/ 2;
+        }
 
-            delete imgsfc;
+        unsigned cast_w = width / qr.getSize() - ( border / 2 );
+        unsigned cast_h = height / qr.getSize() - ( border / 2 );
 
-            if ( convimg != nullptr )
+        if ( cast_w > cast_h )
+        {
+            cast_w = cast_h;
+        }
+        else
+        if ( cast_h > cast_w )
+        {
+            cast_h = cast_w;
+        }
+
+        unsigned start_x = ( width - ( cast_w * qr.getSize() ) - ( border / 2 ) ) / 2;
+        unsigned start_y = ( height - ( cast_h * qr.getSize() ) - ( border / 2 ) ) / 2;
+
+        Fl_RGB_Image* retimg = fl_imgtk::makeanempty( width, height, 4, colBg );
+        
+        if ( retimg != nullptr )
+        {
+            for (size_t y=0; y<qr.getSize(); y++) 
             {
-                Fl_RGB_Image* retimg = fl_imgtk::makeanempty( width, height, 4, colBg );
-                
-                if ( retimg != nullptr )
+                for (size_t x=0; x<qr.getSize(); x++) 
                 {
-                    // post process 
-                    const uint8_t* pSrc = (const uint8_t*)convimg->data()[0];
-                    uint8_t* pDst = (uint8_t*)retimg->data()[0];
-                    size_t   bufflen = convimg->w() * convimg->h();
-                    size_t   depth   = convimg->d();
-                    uint8_t  colfg_r = uint8_t( colFg >> 24 );
-                    uint8_t  colfg_g = uint8_t( ( colFg & 0x00FF0000 ) >> 16 );
-                    uint8_t  colfg_b = uint8_t( ( colFg & 0x0000FF00 ) >> 8 );
-                                    
-                    #pragma omp parallel for
-                    for( size_t cnt=0; cnt<bufflen; cnt++ )
+                    if ( qr.getModule(x, y) ) 
                     {
-                        uint32_t* pcastdst = (uint32_t*)&pDst[cnt*4];
-                        
-                        if ( ( pSrc[ cnt * depth + 0 ] == colfg_r ) &&
-                             ( pSrc[ cnt * depth + 1 ] == colfg_g ) &&
-                             ( pSrc[ cnt * depth + 2 ] == colfg_b ) )
-                        {
-                            *pcastdst = Swap32( colFg );
-                        }
-                        else
-                        {
-                            *pcastdst = Swap32( colBg );
-                        }
+                        unsigned cast_x = cast_w * x + start_x;
+                        unsigned cast_y = cast_h * y + start_y;
+                                                
+                        fl_imgtk::\
+                        draw_fillrect( retimg,
+                                       cast_x, cast_y,
+                                       cast_w, cast_h,
+                                       colFg );
                     }
-                
-                    retimg->uncache();
-
-                    delete convimg;
-                    
-                    return retimg;
                 }
-                
-                delete convimg;
             }
+            
+            retimg->uncache();
         }
         
-        delete svgimg;
+        return retimg;
     }
-    
+
     return nullptr;
 }
 
