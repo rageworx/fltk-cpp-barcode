@@ -55,6 +55,8 @@ Fl_RGB_Image*       imgBarCode      = nullptr;
 char*               svgQRCode       = nullptr;
 Fl_Menu_Button*     popMenu         = nullptr;
 
+uint32_t            codeCol         = 0x99AACCFF;
+
 static string ttfFontFaceFile       = "DejaVuSansMono.ttf";
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -277,6 +279,7 @@ void fl_wcb( Fl_Widget* w )
                     Code128* c128 = new Code128( strCode );
                     if ( c128 != nullptr )
                     {
+                        c128->ForegroundColor( codeCol );
                         c128->FontFace( ttfFontFaceFile );
                         imgBarCode = c128->getImage( img_w, img_h );
                         delete c128;
@@ -319,6 +322,7 @@ void fl_wcb( Fl_Widget* w )
                     EAN13* ean13 = new EAN13( strCode );
                     if ( ean13 != nullptr )
                     {
+                        ean13->ForegroundColor( codeCol );
                         ean13->FontFace( ttfFontFaceFile );
                         imgBarCode = ean13->getImage( img_w, img_h );
                         delete ean13;
@@ -341,6 +345,7 @@ void fl_wcb( Fl_Widget* w )
                     {
                         // testing random color --
                         //qrc->ForegroundColor( rand() );
+                        qrc->ForegroundColor( codeCol );
                         qrc->getSVG( &svgQRCode );
                         
                         imgBarCode = qrc->getImage( img_w, img_h );
@@ -408,6 +413,9 @@ void createWindow()
     window = new Fl_Double_Window( 600, 300, "Barcode/QR Generator Testing" );
     if ( window != nullptr )
     {
+        window->color( 0x30303000 );
+        window->labelcolor( 0xE0E0E000 );
+
         grpDiv0 = new Fl_Group( 0, 0, 600, 40 );
         if ( grpDiv0 != nullptr )
         {
@@ -428,6 +436,9 @@ void createWindow()
                 chsType->add( "EAN13" );
                 chsType->add( "QR" );
                 chsType->value( 0 );
+                chsType->color( window->color() );
+                chsType->labelcolor( window->labelcolor() );
+                chsType->textcolor( window->labelcolor() );
                 chsType->callback( fl_wcb );
             }
 
@@ -447,6 +458,9 @@ void createWindow()
             {
                 inpCode->textfont( FL_COURIER );
                 inpCode->when( FL_WHEN_ENTER_KEY );
+                inpCode->color( fl_darker( window->color() ) );
+                inpCode->labelcolor( window->labelcolor() );
+                inpCode->textcolor( window->labelcolor() );
                 inpCode->callback( fl_wcb );
             }
 
@@ -464,6 +478,8 @@ void createWindow()
             btnGenerate = new Fl_Button( 505, 5, 90, 25, "Generate" );
             if ( btnGenerate != nullptr )
             {
+                btnGenerate->color( fl_lighter( window->color() ) );
+                btnGenerate->labelcolor( window->labelcolor() );
                 btnGenerate->callback( fl_wcb );
             }
 
@@ -478,12 +494,12 @@ void createWindow()
                 grpDiv0->resizable( grpDiv2 );
         }
         
-        grpDiv10 = new Fl_Group( 0,40, 600, 260 );
+        grpDiv10 = new Fl_Group( 0,35, 600, 265 );
         if ( grpDiv10 != nullptr )
         {
             grpDiv10->begin();
             
-            boxRender = new Fl_Box( 0, 40, 600, 260 );
+            boxRender = new Fl_Box( 0, 35, 600, 265 );
             if ( boxRender != nullptr )
             {
                 boxRender->box( FL_THIN_DOWN_BOX );
@@ -491,7 +507,7 @@ void createWindow()
 #ifdef DEBUG_TRANSPARENCY_DRAW_BACK
                 boxRender->color( FL_GRAY );
 #else
-                boxRender->color( FL_WHITE );
+                boxRender->color( 0x50505000 );
 #endif /// of DEBUG_TRANSPARENCY_DRAW_BACK
             }
             
@@ -507,6 +523,7 @@ void createWindow()
         popMenu = new Fl_Menu_Button( 0, 0, window->w(), window->h() );
         if ( popMenu != nullptr )
         {
+            popMenu->box( FL_UP_BOX );
             popMenu->type( Fl_Menu_Button::POPUP3 );
             popMenu->add( "Save to PNG ...\t", FL_C_ + 's', 0, 0, 0 );
             popMenu->add( "Save to SVG ...\t", FL_C_ + 'v', 0, 0, 0 );
@@ -555,7 +572,11 @@ void presetFLTKenv()
     Fl::set_font( FL_FREE_FONT, convLng );
     Fl_Double_Window::default_xclass( DEF_APP_CLSNAME );
 
+#ifdef FLTK_EXT_VERSION
+    Fl::scheme( "flat" );
+#else
     Fl::scheme( "gtk+" );
+#endif /// of FLTK_EXT_VERSION
 }
 
 int main (int argc, char ** argv)

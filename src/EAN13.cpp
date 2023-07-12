@@ -222,7 +222,7 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
             
             if ( ftr != nullptr )
             {
-                unsigned f_w = fntHeight * 0.75f;
+                unsigned f_w = fntHeight * 0.65f;
                 unsigned p_x = leftPadding;
                 unsigned p_y = height - fntHeight;
                 

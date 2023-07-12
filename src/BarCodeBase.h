@@ -26,6 +26,7 @@ class BarCodeBase
         
     protected:
         bool            checkNumberics(std::string& data);
+        void            recalcColor();
         
     protected:
         virtual \
