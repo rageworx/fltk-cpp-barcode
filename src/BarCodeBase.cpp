@@ -12,7 +12,7 @@
 #include "BarCodeBase.h"
 
 BarCodeBase::BarCodeBase( std::string& dt )
- : colBg( 0xFFFFFF00 ), colMaskFg( 0x7F7F7FFF ), colFg( 0x000000FF )
+ : colBg( 0x00000000 ), colMaskFg( 0x01010101 ), colFg( 0x000000FF )
 { 
     data = dt; 
     recalcColor();
@@ -118,10 +118,13 @@ bool BarCodeBase::checkNumberics(std::string& data)
 
 void BarCodeBase::recalcColor()
 {
-    uint32_t colBA = ( colBg & 0x00000001 );
+    /*
+    uint32_t colBA = ( colBg & 0xFFFFFF01 );
 
     if ( colBA == 0 )
         colBA = 1;
     
     colMaskFg = colBA;
+    */
+    colMaskFg = colBg;
 }

@@ -272,10 +272,7 @@ Fl_RGB_Image* Code128::getImage( uint32_t width, uint32_t height)
                                    maskedCol );
 #endif /// of DRAW_FONT_BACK_RECTANGLE
 
-                    // need draw it to remove transparency,
-                    ftr->FontColor( colMaskFg ); /// white for remove transparency
-                    ftr->RenderText( bitmap, w_x, w_y, str.c_str() );
-                    ftr->FontColor( colFg ); /// black, non-alpha.
+                    ftr->FontColor( colFg );
                     ftr->RenderText( bitmap, w_x, w_y, str.c_str() );
 
 #ifdef DEBUG

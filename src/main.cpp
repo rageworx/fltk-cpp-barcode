@@ -19,7 +19,7 @@
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Native_File_Chooser.H>
-#include <FL/Fl_Color_Chooser.H>
+#include <FL/fl_show_colormap.H>
 #include <FL/fl_ask.H>
 
 #include "resource.h"
@@ -389,67 +389,54 @@ void fl_wcb( Fl_Widget* w )
                 
             case 2: // fore-color...
                 {
-                    uint8_t r,g,b = 0;
-                    Fl::get_color( codeCol, r, g, b );
-                    
                     // care for FLTK color ---
-                    if ( ( r < 2 ) && ( g < 2 ) && ( b < 2 ) )
-                    {
-                        r = g = b = 1;
-                    }
-                    
-                    int reti = fl_color_chooser( "New fore color:", r, g, b, 1 );
-                        
-                    if ( reti > 0 )
-                    {                    
-                        // care for FLTK color ---
-                        if ( ( r < 2 ) && ( g < 2 ) && ( b < 2 ) )
-                        {
-                            r = g = b = 1;
-                        }
+                    uint32_t fltkcol = codeCol & 0xFFFFFF00;
+                    uint32_t colsel = fl_show_colormap( fltkcol );
 
-                        codeCol = 0;
-                        codeCol |= r << 24;
-                        codeCol |= g << 16;
-                        codeCol |= b << 8;
-                        codeCol |= 0xFF;
+                    if ( colsel != fltkcol )
+                    {
+                        if ( colsel < 256 )
+                        {
+                            colsel = Fl::get_color( colsel );
+                            
+                            if (colsel == 0 )
+                                codeCol = 0x010101FF;
+                            else
+                                codeCol = colsel | 0x000000FF;
+                        }
 
                         if ( boxRender->image() != nullptr )
                         {
                             btnGenerate->do_callback();
-                        }                        
-                    }                    
+                        }
+                    }
                 }
                 break;
                 
             case 3: // back-color ...
                 {
-                    uint8_t r,g,b = 0;
-                    Fl::get_color( codeBackCol, r, g, b );
-
                     // care for FLTK color ---
-                    if ( ( r < 2 ) && ( g < 2 ) && ( b < 2 ) )
-                    {
-                        r = g = b = 1;
-                    }
-
-                    int reti = fl_color_chooser( "New backgroud color:", r, g, b, 1 );
-                    if ( reti > 0 )
-                    {
-                        // care for FLTK color ---
-                        if ( ( r < 2 ) && ( g < 2 ) && ( b < 2 ) )
+                    uint32_t fltkcol = codeBackCol & 0xFFFFFF00;
+                    uint32_t colsel = fl_show_colormap( fltkcol );
+                        
+                    if ( colsel != fltkcol )
+                    {                        
+                        if ( colsel < 256 )
                         {
-                            r = g = b = 1;
+                            colsel = Fl::get_color( colsel );
+
+                            if (colsel == 0 )
+                                codeBackCol = 0x010101FF;
+                            else
+                                codeBackCol = colsel | 0x000000FF;                            
                         }
 
-                        codeBackCol = 0;
-                        codeBackCol |= r << 24;
-                        codeBackCol |= g << 16;
-                        codeBackCol |= b << 8;
-                        
-                        boxRender->color( codeBackCol );
-                        boxRender->redraw();
-                    }
+                        if ( boxRender->image() != nullptr )
+                        {
+                            boxRender->color( codeBackCol );
+                            boxRender->redraw();
+                        }                        
+                    }                    
                 }
                 break;
 

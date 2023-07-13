@@ -227,7 +227,9 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
 
                 unsigned ptpos[3]  = {0};
                 
-                ptpos[0] = leftPadding - ( multiple * 6 );
+                if ( ( ( multiple * 5 ) - (int)leftPadding  ) > 0 )
+                    ptpos[0] = leftPadding - ( multiple * 5 );
+            
                 ptpos[1] = leftPadding + multiple;
                 ptpos[2] = leftPadding + ( data.size() / 2 ) * multiple;
                 
@@ -271,8 +273,6 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
 #endif /// of DRAW_FONT_BACK_RECTANGLE
                     
                     // draw font in corrected position.
-                    ftr->FontColor( colMaskFg ); /// draw white font to remove transparency.
-                    ftr->RenderText( image, p_x, p_y - ( fntHeight * 0.1f ), tmpbuff );
                     ftr->FontColor( colFg );
                     ftr->RenderText( image, p_x, p_y - ( fntHeight * 0.1f ), tmpbuff );
                 }
