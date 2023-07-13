@@ -19,6 +19,7 @@
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Native_File_Chooser.H>
+#include <FL/Fl_Color_Chooser.H>
 #include <FL/fl_ask.H>
 
 #include "resource.h"
@@ -56,6 +57,7 @@ char*               svgQRCode       = nullptr;
 Fl_Menu_Button*     popMenu         = nullptr;
 
 uint32_t            codeCol         = 0x99AACCFF;
+uint32_t            codeBackCol     = 0x50505000;
 
 static string ttfFontFaceFile       = "DejaVuSansMono.ttf";
 
@@ -359,6 +361,11 @@ void fl_wcb( Fl_Widget* w )
         
         if ( imgBarCode != nullptr )
         {
+            if ( boxRender->label() != nullptr )
+            {
+                boxRender->label( nullptr );
+            }
+            
             boxRender->image( imgBarCode );
             boxRender->redraw();
         }
@@ -378,6 +385,72 @@ void fl_wcb( Fl_Widget* w )
                 
             case 1:
                 Save2SVG();
+                break;
+                
+            case 2: // fore-color...
+                {
+                    uint8_t r,g,b = 0;
+                    Fl::get_color( codeCol, r, g, b );
+                    
+                    // care for FLTK color ---
+                    if ( ( r < 2 ) && ( g < 2 ) && ( b < 2 ) )
+                    {
+                        r = g = b = 1;
+                    }
+                    
+                    int reti = fl_color_chooser( "New fore color:", r, g, b, 1 );
+                        
+                    if ( reti > 0 )
+                    {                    
+                        // care for FLTK color ---
+                        if ( ( r < 2 ) && ( g < 2 ) && ( b < 2 ) )
+                        {
+                            r = g = b = 1;
+                        }
+
+                        codeCol = 0;
+                        codeCol |= r << 24;
+                        codeCol |= g << 16;
+                        codeCol |= b << 8;
+                        codeCol |= 0xFF;
+
+                        if ( boxRender->image() != nullptr )
+                        {
+                            btnGenerate->do_callback();
+                        }                        
+                    }                    
+                }
+                break;
+                
+            case 3: // back-color ...
+                {
+                    uint8_t r,g,b = 0;
+                    Fl::get_color( codeBackCol, r, g, b );
+
+                    // care for FLTK color ---
+                    if ( ( r < 2 ) && ( g < 2 ) && ( b < 2 ) )
+                    {
+                        r = g = b = 1;
+                    }
+
+                    int reti = fl_color_chooser( "New backgroud color:", r, g, b, 1 );
+                    if ( reti > 0 )
+                    {
+                        // care for FLTK color ---
+                        if ( ( r < 2 ) && ( g < 2 ) && ( b < 2 ) )
+                        {
+                            r = g = b = 1;
+                        }
+
+                        codeBackCol = 0;
+                        codeBackCol |= r << 24;
+                        codeBackCol |= g << 16;
+                        codeBackCol |= b << 8;
+                        
+                        boxRender->color( codeBackCol );
+                        boxRender->redraw();
+                    }
+                }
                 break;
 
             default:
@@ -505,11 +578,10 @@ void createWindow()
             {
                 boxRender->box( FL_THIN_DOWN_BOX );
                 boxRender->align( FL_ALIGN_CLIP );
-#ifdef DEBUG_TRANSPARENCY_DRAW_BACK
-                boxRender->color( FL_GRAY );
-#else
-                boxRender->color( 0x50505000 );
-#endif /// of DEBUG_TRANSPARENCY_DRAW_BACK
+                boxRender->color( codeBackCol );
+                boxRender->labelsize( window->labelsize() * 2 );
+                boxRender->labelcolor( fl_darker( window->labelcolor() ) );
+                boxRender->label( "Right click to more menu" );
             }
             
             grpDiv10->end();
@@ -526,20 +598,13 @@ void createWindow()
         {
             popMenu->color( fl_darker( window->color() ) );
             popMenu->labelcolor( window->labelcolor() );
+            popMenu->textcolor( window->labelcolor() );
             popMenu->type( Fl_Menu_Button::POPUP3 );
-            popMenu->add( "Save to PNG ...\t", FL_C_ + 's', 0, 0, 0 );
-            popMenu->add( "Save to SVG ...\t", FL_C_ + 'v', 0, 0, 0 );
-
-            // FLTK menu need change colors in each iterator ...
-            Fl_Menu_Item* pM = (Fl_Menu_Item*)popMenu->menu();
-            if ( pM != nullptr )
-            {
-                for( size_t cnt=0; cnt<2; cnt++ )
-                {
-                    pM[cnt].labelcolor( window->labelcolor() );
-                }
-            }
-
+            popMenu->add( "Save to PNG ...\t",      FL_C_ + 's', 0, 0, 0 );
+            popMenu->add( "Save to SVG ...\t",      FL_C_ + 'v', 0, 0, 0 );
+            popMenu->add( "Change fore-color\t",    FL_C_ + 'c', 0, 0, 0 );
+            popMenu->add( "Change back-color\t",    FL_C_ + 'b', 0, 0, 0 );
+            popMenu->mode( 1, FL_MENU_DIVIDER );
             popMenu->callback( fl_wcb );
             
             // disable SVG for now.
