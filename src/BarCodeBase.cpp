@@ -118,29 +118,10 @@ bool BarCodeBase::checkNumberics(std::string& data)
 
 void BarCodeBase::recalcColor()
 {
-    uint8_t colB[4] = {0};
-    uint8_t colF[4] = {0};
-    uint8_t colM[4] = {0};
-    
-    colB[0] = ( colBg & 0xFF000000 ) >> 24;
-    colB[1] = ( colBg & 0x00FF0000 ) >> 16;
-    colB[2] = ( colBg & 0x0000FF00 ) >> 8;
-    colB[3] = ( colBg & 0x000000FF );
+    uint32_t colBA = ( colBg & 0x00000001 );
 
-    colF[0] = ( colFg & 0xFF000000 ) >> 24;
-    colF[1] = ( colFg & 0x00FF0000 ) >> 16;
-    colF[2] = ( colFg & 0x0000FF00 ) >> 8;
-    colF[3] = ( colFg & 0x000000FF );
+    if ( colBA == 0 )
+        colBA = 1;
     
-    
-    for( size_t x=0; x<4; x++ )
-    {
-        colM[x] = ( colB[x] + colF[x] ) / 128;
-    }
-        
-    colMaskFg  = 0;
-    colMaskFg |= colM[0] << 24;
-    colMaskFg |= colM[1] << 16;
-    colMaskFg |= colM[2] << 8;
-    colMaskFg |= colM[3];
+    colMaskFg = colBA;
 }

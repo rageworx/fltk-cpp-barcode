@@ -416,7 +416,7 @@ void createWindow()
         window->color( 0x30303000 );
         window->labelcolor( 0xE0E0E000 );
 
-        grpDiv0 = new Fl_Group( 0, 0, 600, 40 );
+        grpDiv0 = new Fl_Group( 0, 0, 600, 35 );
         if ( grpDiv0 != nullptr )
         {
             grpDiv0->begin();
@@ -461,6 +461,7 @@ void createWindow()
                 inpCode->color( fl_darker( window->color() ) );
                 inpCode->labelcolor( window->labelcolor() );
                 inpCode->textcolor( window->labelcolor() );
+                inpCode->cursor_color( fl_darker( window->labelcolor() ) );
                 inpCode->callback( fl_wcb );
             }
 
@@ -523,10 +524,22 @@ void createWindow()
         popMenu = new Fl_Menu_Button( 0, 0, window->w(), window->h() );
         if ( popMenu != nullptr )
         {
-            popMenu->box( FL_UP_BOX );
+            popMenu->color( fl_darker( window->color() ) );
+            popMenu->labelcolor( window->labelcolor() );
             popMenu->type( Fl_Menu_Button::POPUP3 );
             popMenu->add( "Save to PNG ...\t", FL_C_ + 's', 0, 0, 0 );
             popMenu->add( "Save to SVG ...\t", FL_C_ + 'v', 0, 0, 0 );
+
+            // FLTK menu need change colors in each iterator ...
+            Fl_Menu_Item* pM = (Fl_Menu_Item*)popMenu->menu();
+            if ( pM != nullptr )
+            {
+                for( size_t cnt=0; cnt<2; cnt++ )
+                {
+                    pM[cnt].labelcolor( window->labelcolor() );
+                }
+            }
+
             popMenu->callback( fl_wcb );
             
             // disable SVG for now.

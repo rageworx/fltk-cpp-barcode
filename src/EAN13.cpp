@@ -203,7 +203,7 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
                     {
                         if ( ( inputX < midIdxMin ) || ( inputX > midIdxMax ) )
                         {
-                            drawHeight = outputHeight - fntHeight;                            
+                            drawHeight = outputHeight - fntHeight;
                         }
                     }
 
@@ -222,26 +222,31 @@ Fl_RGB_Image* EAN13::getImage( unsigned width, unsigned height)
             
             if ( ftr != nullptr )
             {
-                unsigned f_w = fntHeight * 0.65f;
                 unsigned p_x = leftPadding;
                 unsigned p_y = height - fntHeight;
+
+                unsigned ptpos[3]  = {0};
+                
+                ptpos[0] = leftPadding - ( multiple * 6 );
+                ptpos[1] = leftPadding + multiple;
+                ptpos[2] = leftPadding + ( data.size() / 2 ) * multiple;
                 
                 for( size_t cnt=0; cnt<data.size(); cnt++ )
                 {
                     if ( cnt == 0 )
                     {
-                        p_x = leftPadding - ( f_w * 1.1f );
+                        p_x = ptpos[0];
                     }
                     else
                     if ( cnt > 0 )
                     {
                         if ( cnt < ( data.size() / 2 + 1 ) )
                         {
-                            p_x = leftPadding + ( f_w * cnt - 1 ) - multiple;
+                            p_x = ptpos[1] + cnt * multiple * 6.5f;
                         }
                         else
                         {
-                            p_x = leftPadding + ( multiple * 6 ) + ( f_w * cnt - 1 );
+                            p_x = ptpos[2] + cnt * multiple * 6.5f;
                         }
                     }
                         
