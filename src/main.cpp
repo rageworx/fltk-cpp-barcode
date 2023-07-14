@@ -21,6 +21,7 @@
 #include <FL/Fl_Native_File_Chooser.H>
 #include <FL/fl_show_colormap.H>
 #include <FL/fl_ask.H>
+#include <fl_imgtk.h>
 
 #include "resource.h"
 #include "Code128.h"
@@ -66,6 +67,112 @@ static string ttfFontFaceFile       = "DejaVuSansMono.ttf";
 // #define DEBUG_TRANSPARENCY_DRAW_BACK
 
 ////////////////////////////////////////////////////////////////////////////////
+#ifdef DEBUG
+    #include <iostream>
+    #include <list>
+
+    using namespace std;
+
+      typedef struct {
+	      uint64_t address;
+	      size_t   size;
+	      char     file[64];
+	      size_t   line;
+      } ALLOC_INFO;
+
+      typedef list<ALLOC_INFO*> AllocList;
+
+      AllocList *allocList;
+
+      void AddTrack(uint64_t addr,  size_t asize,  const char *fname, size_t lnum)
+      {
+	      ALLOC_INFO *info;
+
+	      if(!allocList) 
+          {
+		      allocList = new(AllocList);
+	      }
+
+	      info = new(ALLOC_INFO);
+	      info->address = addr;
+	      strncpy(info->file, fname, 63);
+	      info->line = lnum;
+	      info->size = asize;
+	      allocList->insert(allocList->begin(), info);
+      };
+
+      void RemoveTrack(uint64_t addr)
+      {
+	      AllocList::iterator i;
+
+	      if(!allocList)
+		      return;
+          
+	      for(i = allocList->begin(); i != allocList->end(); i++)
+	      {
+		      if((*i)->address == addr)
+		      {
+			      allocList->remove((*i));
+			      break;
+		      }
+	      }
+      };
+      
+      inline void * __cdecl operator new(size_t size)
+      {
+	      void *ptr = (void *)malloc(size);
+        
+          if ( ptr != NULL )
+            AddTrack((size_t)ptr, size, "MEM", 0);
+        
+	      return(ptr);          
+      };
+
+      inline void __cdecl operator delete(void *p)
+      {
+	      RemoveTrack((size_t)p);
+	      free(p);
+      };
+      
+      void DumpUnfreed()
+      {
+	      AllocList::iterator i;
+	      size_t totalSize = 0;
+	      char buf[1024] = {0};
+
+	      if(!allocList)
+		      return;
+
+	      for(i = allocList->begin(); i != allocList->end(); i++) 
+          {
+		      sprintf(buf, "%-50s:\t\tLINE %zu,\t\tADDRESS %X\t%zu unfreed\n",
+			      (*i)->file, (*i)->line, (*i)->address, (*i)->size );
+		      OutputDebugStringA(buf);
+		      totalSize += (*i)->size;
+	      }
+	      sprintf(buf, "-----------------------------------------------------------\n");
+	      OutputDebugStringA(buf);
+	      sprintf(buf, "Total Unfreed: %zu bytes\n", totalSize);
+	      OutputDebugStringA(buf);
+      };
+       
+#endif /// of DEBUG
+
+void usr_scale(Fl_RGB_Image* s, int x, int y, int w, int h, Fl_RGB_Image** o)
+{
+    printf( "(debug)usr_scale( %p, %d, %d, %d, %d, .. );\n",
+            s, x, y, w, h );
+
+    if ( s != NULL )
+    {
+        printf( "(debug)s->w() = %d, s->h() = %d\n", s->w(), s->h() );
+        Fl_RGB_Image* r = fl_imgtk::rescale( s, w, h, fl_imgtk::BICUBIC );
+        printf( "(debug)o->w() = %d, o->h() = %d\n", r->w(), r->h() );
+        *o = r;
+    }
+    
+    fflush( stdout );
+}
 
 void applyIcon()
 {
@@ -639,9 +746,14 @@ void presetFLTKenv()
 
 #ifdef FLTK_EXT_VERSION
     Fl::scheme( "flat" );
+    
+    Fl_Image:: scaling_algorithm( FL_RGB_SCALING_USER, usr_scale );
 #else
     Fl::scheme( "gtk+" );
+    // Default RGB image scaling for high-DPI, but not works on Windows.
+    Fl_Image::scaling_algorithm( FL_RGB_SCALING_BILINEAR );
 #endif /// of FLTK_EXT_VERSION
+
 }
 
 int main (int argc, char ** argv)
@@ -679,6 +791,10 @@ int main (int argc, char ** argv)
     {
         free( argv_me_bin );
     }
+    
+#ifdef DEBUG
+    DumpUnfreed();
+#endif    
     
     return reti;
 }
