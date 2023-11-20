@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="0.9">
+    <dict>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+
+	<key>CFBundleExecutable</key>
+	<string>fltkbarcodegen</string>
+
+	<key>CFBundleIdentifier</key>
+	<string>info.rageworx.fltkbarcodegen</string>
+
+	<key>CFBundleVersion</key>
+	<string>--VER_LONG--</string>
+
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright 2023 by Raphael Kim</string>
+
+	<key>CFBundleName</key>
+	<string>FLTK Barcode generator</string>
+
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+
+	<key>CFBundleSignature</key>
+	<string>FLTKBARCODEGEN</string>
+
+	<key>CFBundleIconFile</key>
+	<string>appicon.icns</string>
+
+	<key>CFBundleShortVersionString</key>
+	<string>--VER_SHORT--</string>
+
+	<key>CFBundleGetInfoString</key>
+	<string>Copyright 2023 by Raphael Kim</string>
+
+	<key>NSHighResolutionCapable</key>
+	<true/>
+
+    </dict>
+</plist>
