@@ -29,7 +29,7 @@ TARGET_MAC_RESOURCE = ${TARGET_DIR}/${TARGET_MAC}/contents/Resources
 # Compiler optiops 
 COPTS += -std=c++11
 COPTS += -mmacosx-version-min=11.0
-#COPTS += -arch arm64 -arch x86_64
+COPTS += -arch arm64 -arch x86_64
 COPTS += -Os
 #COPTS += -fopenmp -fomit-frame-pointer 
 #COPTS += -DDEBUG
