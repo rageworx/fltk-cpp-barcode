@@ -653,10 +653,30 @@ int main (int argc, char ** argv)
     createWindow();
     
     // check where TTF is ...
+#if __APPLE__
+    if ( access( ttfFontFaceFile.c_str(), 0 ) != 0 )
+    {
+        // strip resources ...
+        string stripargv = argv[0];
+        size_t pos = stripargv.find_last_of( "/" );
+        if ( pos != string::npos )
+        {
+            stripargv = stripargv.substr( 0, pos );
+            pos = stripargv.find_last_of( "/" );
+            if ( pos != string::npos )
+            {
+                stripargv = stripargv.substr( 0, pos );
+            }
+        }
+        stripargv += "/Resources/";
+        ttfFontFaceFile.insert( 0, stripargv );
+    }
+#else
     if ( access( ttfFontFaceFile.c_str(), 0 ) != 0 )
     {
         ttfFontFaceFile.insert( 0, "./ttf/" );
     }
+#endif
 
     reti = Fl::run();
     
