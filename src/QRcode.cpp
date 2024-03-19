@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <climits>
 
 #include <FL/Fl.H>
 #include <FL/fl_utf8.h>
@@ -30,7 +31,7 @@ using std::uint8_t;
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
 
-#ifdef __APPLE__
+#if defined(__linux__)||defined(__APPLE__)
 size_t strcat_s(char *d, size_t n, char const *s )
 {
     return snprintf(d, n, "%s%s", d, s);
