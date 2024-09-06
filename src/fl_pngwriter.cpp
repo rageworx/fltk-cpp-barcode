@@ -16,11 +16,7 @@
 #endif /// of __APPLE__
 
 #include <vector>
-#if defined(USE_SYSPNG)
-	#include <png.h>
-#else
-	#include <FL/images/png.h>
-#endif /// of defined(USE_SYSPNG)
+#include <png.h>
 #include "fl_pngwriter.h"
 #include "fmemio.h"
 

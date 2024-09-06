@@ -81,8 +81,8 @@ void BarCodeBase::printByteArr( const char* msg, const uint8_t* buff, size_t buf
         
         for( size_t cnt=0; cnt<bufflen; cnt++ )
         {
-            char strndr[4] = {0};
-            snprintf( strndr, 4, "%d ", buff[cnt] );
+            char strndr[5] = {0};
+            snprintf( strndr, 5, "%u ", (uint8_t)buff[cnt] );
             sb += strndr;
         }
 
