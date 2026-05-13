@@ -71,6 +71,7 @@ LFLAGS += -lbrotlicommon
 LFLAGS += $(FLTKCFG_LFG)
 LFLAGS += -lpthread
 LFLAGS += -lrpcrt4
+LFLAGS += -ldwrite
 
 # Sources
 SRCS = $(wildcard $(SRC_PATH)/*.cpp)
