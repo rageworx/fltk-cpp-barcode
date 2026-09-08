@@ -393,6 +393,13 @@ void fl_wcb( Fl_Widget* w )
                     uint32_t fltkcol = codeCol & 0xFFFFFF00;
                     uint32_t colsel = fl_show_colormap( fltkcol );
 
+                    printf( "(debug)colsel = %u\n", colsel );
+                    uint32_t dbg_col = Fl::get_color( colsel );
+                    printf( "(debug) converted color = %X\n", 
+                            dbg_col );
+                    fflush( stdout );
+
+
                     if ( colsel != fltkcol )
                     {
                         if ( colsel < 256 )
@@ -404,7 +411,6 @@ void fl_wcb( Fl_Widget* w )
                             else
                                 codeCol = colsel | 0x000000FF;
                         }
-
                         if ( boxRender->image() != nullptr )
                         {
                             btnGenerate->do_callback();
@@ -419,6 +425,8 @@ void fl_wcb( Fl_Widget* w )
                     uint32_t fltkcol = codeBackCol & 0xFFFFFF00;
                     uint32_t colsel = fl_show_colormap( fltkcol );
                         
+                    printf( "(debug)colsel = %u\n", colsel );
+
                     if ( colsel != fltkcol )
                     {                        
                         if ( colsel < 256 )
@@ -428,7 +436,7 @@ void fl_wcb( Fl_Widget* w )
                             if (colsel == 0 )
                                 codeBackCol = 0x010101FF;
                             else
-                                codeBackCol = colsel | 0x000000FF;                            
+                                codeBackCol = colsel | 0x000000FF;
                         }
 
                         if ( boxRender->image() != nullptr )

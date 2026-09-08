@@ -35,4 +35,10 @@ LANGUAGE LANG_NEUTRAL, LANG_NEUTRAL
 }
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+// Windows common control issue of high DPI and 
+// different DPIs of multiple monitors with FLTK 1.4.0 or higher.
+// Do not use common control 6.0 since Windows 10.
+#if (WINVER < 0x0A00)
 1                  RT_MANIFEST    ".\\manifest.xml"
+#endif /// of WINVER, 0x066 == Windows Vista
